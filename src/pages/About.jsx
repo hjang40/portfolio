@@ -1,373 +1,523 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import { FaCaretDown } from "react-icons/fa";
-
-import Temple from "../models/Temple";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useNavigate } from "react-router-dom";
+import { Html } from "@react-three/drei";
+import * as THREE from "three";
+import Pokeball1 from "../models/Pokeball1";
+import BrainComp from "../models/Brain_Comp";
+import GraduationHat from "../models/Graduation_Hat";
+import Hobbies from "../models/Hobbies";
+import Compass from "../models/Compass";
 import textBg from "../assets/images/text.png";
 
-const About = () => {
-  const [scrollY, setScrollY] = useState(0);
-  const [currentSection, setCurrentSection] = useState(0);
-  const containerRef = useRef();
-
-  // Your sections data remains the same
-  const sections = [
-    {
-      id: "intro",
-      title: "Hyun Seo Jang",
-      subtitle: "About Me!",
-      content:
-        "Hello! My name is Hyun Jang, and I'm currently a Senior majoring in Computer Science with a minor in Neuroscience at the University of Maryland, College Park.",
-      floatingObjects: ["💻", "🧠", "🎓"],
-      textColor: "text-blue-300",
-      glowColor: "shadow-blue-500/50",
-    },
-    {
-      id: "passion",
-      title: "DUAL SPECIALIST",
-      subtitle: "Technology × Neuroscience",
-      content:
-        "My passion is driven by fascination with technology and the human brain. Why not pursue both and explore how far they can go together?",
-      floatingObjects: ["⚡", "🔬", "🤖"],
-      textColor: "text-purple-300",
-      glowColor: "shadow-purple-500/50",
-    },
-    {
-      id: "hobbies",
-      title: "HOBBIES",
-      subtitle: "Multi Interests",
-      content:
-        "Soccer, volleyball, reading, gaming, escape rooms, and puzzles. I spend hours daily reading and love challenging my mind with complex problems.",
-      floatingObjects: ["🏐", "📚", "🎮", "🧩"],
-      textColor: "text-green-300",
-      glowColor: "shadow-green-500/50",
-    },
-    {
-      id: "projects",
-      title: "STATUS",
-      subtitle: "Perfection in Progress",
-      content:
-        "My portfolio showcases projects reflecting diverse skills and my approach to problem-solving at the intersection of technology and neuroscience.",
-      floatingObjects: ["🚀", "💼", "🔥"],
-      textColor: "text-orange-300",
-      glowColor: "shadow-orange-500/50",
-    },
-    {
-      id: "connect",
-      title: "CHAMPION MODE",
-      subtitle: "Ready for Adventure",
-      content:
-        "The journey continues. Ready to explore my projects and connect?",
-      floatingObjects: ["✨", "🌟", "💫"],
-      textColor: "text-yellow-300",
-      glowColor: "shadow-yellow-500/50",
-    },
-  ];
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (containerRef.current) {
-        const scrollPosition = containerRef.current.scrollTop;
-        setScrollY(scrollPosition);
-
-        const sectionHeight = window.innerHeight * 0.8;
-        const sectionIndex = Math.floor(scrollPosition / sectionHeight);
-        setCurrentSection(Math.min(sectionIndex, sections.length - 1));
-      }
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-      return () => container.removeEventListener("scroll", handleScroll);
-    }
-  }, [sections.length]);
-
-  // Calculate progress for the CURRENT section
-  const sectionHeight = window.innerHeight * 0.8;
-  const progress = Math.max(
-    0,
-    Math.min(1, (scrollY - currentSection * sectionHeight) / sectionHeight)
-  );
-
-  // Fairy lights positions (randomized fixed percentages)
-  const fairyLights = [
-    { left: "5%", top: "10%" }, { left: "15%", top: "25%" },
-    { left: "25%", top: "40%" }, { left: "40%", top: "15%" },
-    { left: "55%", top: "35%" }, { left: "70%", top: "20%" },
-    { left: "80%", top: "45%" }, { left: "90%", top: "30%" },
-  ];
+// Pokemon-style UI Frame
+const PokemonFrame = ({ children, variant = "blue", className = "" }) => {
+  const colors = {
+    blue: "from-blue-600 to-blue-800",
+    purple: "from-purple-600 to-purple-800",
+    green: "from-green-600 to-green-800",
+    orange: "from-orange-600 to-orange-800",
+    yellow: "from-yellow-600 to-yellow-800",
+  };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      {/* Fixed stable background */}
+    <div className={`relative ${className}`}>
+      {/* Main frame */}
       <div
-        className="fixed inset-0 w-full h-full"
-        style={{
-          background: "linear-gradient(to bottom, #312e81, #581c87, #000000)",
-          zIndex: -1,
-        }}
-      />
-      
-      {/* 1. SINGLE, PERSISTENT CANVAS */}
-      <div className="fixed inset-0 z-20 pointer-events-none">
+        className={`bg-gradient-to-br ${colors[variant]} p-1 rounded-2xl shadow-2xl border-4 border-white/20`}
+      >
+        <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 border-2 border-gray-700/50">
+          {children}
+        </div>
+      </div>
+
+      {/* Corner decorations */}
+      <div className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 rounded-full border-2 border-white"></div>
+      <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full border-2 border-white"></div>
+      <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-green-400 rounded-full border-2 border-white"></div>
+      <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-blue-400 rounded-full border-2 border-white"></div>
+    </div>
+  );
+};
+
+// Generic 3D Model Component that can render different models
+const Animated3DModel = ({ modelJSX, sectionIndex, isActive }) => {
+  const modelRef = useRef();
+  const particleRef = useRef();
+
+  const colors = ["#60a5fa", "#a78bfa", "#34d399", "#fb923c", "#fbbf24"];
+
+  useFrame((state) => {
+    if (modelRef.current) {
+      const time = state.clock.elapsedTime;
+
+      // Set floating animation to a stable sine wave (not adding to position)
+      modelRef.current.position.y = Math.sin(time * 1.2 + sectionIndex) * 0.5;
+
+      // Active scaling effect
+      const targetScale = isActive ? 1.1 : 1.0;
+      modelRef.current.scale.lerp(
+        new THREE.Vector3(targetScale, targetScale, targetScale),
+        0.15
+      );
+    }
+
+    // Energy particles around model
+    if (particleRef.current && isActive) {
+      const time = state.clock.elapsedTime;
+      particleRef.current.rotation.y = time * 2;
+      particleRef.current.children.forEach((particle, i) => {
+        particle.position.y = Math.sin(time * 3 + i) * 0.5;
+        particle.material.opacity = 0.5 + Math.sin(time * 4 + i) * 0.3;
+      });
+    }
+  });
+
+  return (
+    <group>
+      <group ref={modelRef}>{modelJSX}</group>
+
+      {/* Energy particles */}
+      {isActive && (
+        <group ref={particleRef}>
+          {[...Array(12)].map((_, i) => (
+            <mesh
+              key={i}
+              position={[Math.cos(i * 0.524) * 4, 0, Math.sin(i * 0.524) * 4]}
+            >
+              <sphereGeometry args={[0.15, 8, 8]} />
+              <meshBasicMaterial color={colors[sectionIndex]} transparent />
+            </mesh>
+          ))}
+        </group>
+      )}
+    </group>
+  );
+};
+
+// Pokemon-style Section Component
+const PokemonSection = ({ section, index, isActive }) => {
+  const variants = ["blue", "purple", "green", "orange", "yellow"];
+
+  return (
+    <div
+      className={`min-h-screen flex items-center justify-between px-8 py-12 transition-all duration-1000 ${
+        isActive ? "opacity-100" : "opacity-30"
+      }`}
+    >
+      {/* Left side - Game UI Style */}
+      <div className="flex-1 max-w-2xl space-y-8">
+        {/* Pokemon-style header */}
+        <PokemonFrame variant={variants[index]} className="inline-block">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+              <span className="text-white font-bold text-lg">{index + 1}</span>
+            </div>
+            <div>
+              <div className="text-yellow-300 text-sm font-mono uppercase tracking-wider">
+                {/* {section.category} */}
+              </div>
+              <div className="text-white text-lg font-bold">
+                {section.category}
+              </div>
+            </div>
+          </div>
+        </PokemonFrame>
+
+        {/* Title with Pokemon-style effects */}
+        <div className="space-y-4">
+          <h1 className="text-5xl font-bold text-white leading-tight">
+            {section.title.split(" ").map((word, i) => (
+              <span
+                key={i}
+                className={`inline-block mr-4 transition-all duration-700 delay-${
+                  i * 150
+                } drop-shadow-lg`}
+                style={{
+                  color: section.color,
+                  transform: isActive
+                    ? "translateY(0) scale(1)"
+                    : "translateY(30px) scale(0.9)",
+                  opacity: isActive ? 1 : 0.7,
+                  textShadow: isActive ? `0 0 20px ${section.color}` : "none",
+                }}
+              >
+                {word}
+              </span>
+            ))}
+          </h1>
+
+          <div className="h-1 w-32 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-full"></div>
+        </div>
+
+        {/* Pokemon-style text box */}
+        <PokemonFrame variant={variants[index]} className="max-w-xl">
+          <div className="space-y-4">
+            <h2 className="text-xl text-yellow-300 font-semibold border-b border-gray-600 pb-2">
+              {section.subtitle}
+            </h2>
+            <p className="text-gray-300 leading-relaxed text-lg font-mono">
+              {section.content}
+            </p>
+          </div>
+        </PokemonFrame>
+
+        {/* Skills as Pokemon-style badges */}
+        {section.skills && (
+          <div className="space-y-4">
+            <div className="text-yellow-300 font-bold text-lg flex items-center gap-2">
+              <span>⭐</span> SKILLS
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {section.skills.map((skill, i) => (
+                <div
+                  key={i}
+                  className="bg-gradient-to-r from-gray-800 to-gray-700 px-4 py-3 rounded-xl border-2 border-gray-600 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105 cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-white font-mono text-sm">
+                      {skill}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right side - 3D Model */}
+      <div className="flex-1 flex justify-center items-center relative h-screen">
         <Canvas
-          camera={{ position: [0, 0, 5], fov: 75, near: 0.1, far: 1000 }}
-          gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
+          camera={{ position: [0, 0, 8], fov: 50 }}
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            top: 0,
+            right: 0,
+          }}
+          gl={{ alpha: true, antialias: true }}
         >
           <Suspense fallback={null}>
-            <ambientLight intensity={0.8} />
+            <ambientLight intensity={0.4} />
             <directionalLight position={[5, 5, 5]} intensity={1.2} />
-            <directionalLight position={[-5, -5, -5]} intensity={0.6} />
-            <pointLight position={[0, 0, 10]} intensity={0.8} />
+            <pointLight
+              position={[-5, -5, 5]}
+              intensity={0.8}
+              color={section.color}
+            />
 
-            {/* 2. RENDER THE SINGLE TEMPLE MODEL WITH DYNAMIC PROPS */}
-            <Temple
-              position={[
-                (progress - 0.5) * 4, // Increased range for more movement
-                Math.sin(progress * Math.PI) * 1, // Increased height
-                0
-              ]}
-              rotation={[
-                Math.sin(scrollY * 0.001) * 0.2,
-                progress * Math.PI * 2,
-                Math.cos(scrollY * 0.001) * 0.1
-              ]}
-              scale={[
-                1.2 + Math.sin(progress * Math.PI) * 0.3,
-                1.2 + Math.sin(progress * Math.PI) * 0.3,
-                1.2 + Math.sin(progress * Math.PI) * 0.3
-              ]}
+            <Animated3DModel
+              modelJSX={section.modelJSX}
+              sectionIndex={index}
+              isActive={isActive}
             />
           </Suspense>
         </Canvas>
       </div>
+    </div>
+  );
+};
 
-      {/* Scrollable content */}
-      <div
-        ref={containerRef}
-        className="relative h-full overflow-y-scroll scrollbar-hide"
-        style={{ scrollBehavior: "smooth", zIndex: 10 }}
-      >
-        {sections.map((section, index) => {
-          const isActive = Math.abs(currentSection - index) <= 1;
-          const sectionProgress = Math.max(0,Math.min(1,(scrollY - index * sectionHeight) / sectionHeight));
+// Pokemon-style Progress HUD
+const PokemonHUD = ({ currentSection, totalSections, onSectionChange }) => {
+  const progress = ((currentSection + 1) / totalSections) * 100;
 
-          return (
-            <div
-              key={section.id}
-              className="relative min-h-screen flex items-center justify-center px-8 py-20"
-              style={{
-                opacity: isActive ? 1 : 0.3,
-                transition: 'opacity 0.5s ease-out'
-              }}
-            >
-              {/* NOTE: MainIconRenderer has been removed from here */}
+  return (
+    <div className="fixed top-8 left-8 z-50">
+      <PokemonFrame variant="blue" className="w-64">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-yellow-300 font-bold text-sm">JOURNEY</span>
+            <span className="text-white font-mono text-sm">
+              {currentSection + 1}/{totalSections}
+            </span>
+          </div>
 
-              {/* Floating objects around main icon */}
-              {section.floatingObjects.map((obj, i) => (
-                <div
-                  key={i}
-                  className="fixed z-30"
-                  style={{
-                    left: `${20 + i * 15}%`,
-                    top: `${30 + (i % 2) * 40}%`,
-                    transform: `translateY(${Math.sin(scrollY * 0.003 + i) * 25
-                      }px) translateX(${Math.cos(scrollY * 0.002 + i) * 15
-                      }px) rotateZ(${scrollY * 0.02 + i * 45}deg) scale(${0.8 + Math.sin(scrollY * 0.001 + i) * 0.2
-                      })`,
-                    opacity: isActive ? 0.8 : 0.3,
-                    filter: `drop-shadow(0 0 20px ${section.glowColor.includes("blue")
-                        ? "#3b82f6"
-                        : section.glowColor.includes("purple")
-                          ? "#a855f7"
-                          : section.glowColor.includes("green")
-                            ? "#22c55e"
-                            : section.glowColor.includes("orange")
-                              ? "#f97316"
-                              : "#eab308"
-                      })`,
-                    transition:
-                      "transform 0.4s ease-out, opacity 0.5s ease-out",
-                  }}
-                >
-                  <div className="text-5xl">{obj}</div>
-                </div>
-              ))}
-
-              {/* Floating text content */}
+          {/* Pokemon-style health bar as progress */}
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-700 rounded-full overflow-hidden border-2 border-gray-600">
               <div
-                className="fixed right-1/4 top-1/2 transform translate-x-1/2 -translate-y-1/2 z-40 max-w-md flex flex-col items-center"
-                style={{
-                  transform: `translateX(${50 - sectionProgress * 100}px) translateY(${Math.cos(sectionProgress * Math.PI) * 50
-                    }px) rotateX(${Math.sin(sectionProgress * Math.PI) * 10}deg)`,
-                  opacity: isActive ? 1 : 0.5,
-                  transition: 'opacity 0.5s ease-out, transform 0.4s ease-out'
-                }}
+                className="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full transition-all duration-1000 ease-out relative"
+                style={{ width: `${progress}%` }}
               >
-                <div
-                  className={`text-4xl font-bold mb-4 ${section.textColor} drop-shadow-2xl`}
-                  style={{
-                    textShadow: `0 0 20px ${section.glowColor.includes("blue")
-                        ? "#3b82f6" : section.glowColor.includes("purple")
-                          ? "#a855f7" : section.glowColor.includes("green")
-                            ? "#22c55e" : section.glowColor.includes("orange")
-                              ? "#f97316" : "#eab308"
-                      }`,
-                    transform: `translateY(${Math.sin(scrollY * 0.002 + index) * 5
-                      }px)`,
-                    transition: "transform 0.3s ease-out",
-                  }}
-                >
-                  {section.title}
-                </div>
-                <div
-                  className="text-xl text-gray-300 mb-6 font-medium"
-                  style={{
-                    transform: `translateY(${Math.sin(scrollY * 0.0025 + index) * 4
-                      }px)`,
-                    textShadow: "0 0 10px rgba(255,255,255,0.3)",
-                    transition: "transform 0.3s ease-out",
-                  }}
-                >
-                  {section.subtitle}
-                </div>
-                <div
-                  className="opacity-70 font-pokemon relative w-[700px] h-32 px-4 py-2 rounded-lg flex items-center justify-center cursor-pointer"
-                  style={{
-                    backgroundImage: `url(${textBg})`,
-                    backgroundColor: "white",
-                    backgroundSize: "100% 100%",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    boxShadow: `0 0 30px ${section.glowColor.includes("blue")
-                        ? "rgba(59, 130, 246, 0.4)" : section.glowColor.includes("purple")
-                          ? "rgba(168, 85, 247, 0.4)" : section.glowColor.includes("green")
-                            ? "rgba(34, 197, 94, 0.4)" : section.glowColor.includes("orange")
-                              ? "rgba(249, 115, 22, 0.4)" : "rgba(234, 179, 8, 0.4)"
-                      }`,
-                    transform: `translateY(${Math.sin(scrollY * 0.0015 + index) * 3
-                      }px)`,
-                    transition: "transform 0.4s ease-out",
-                  }}
-                >
-                  <div className="relative w-full h-full flex items-center">
-                    <div className="text-black text-sm break-words flex-1 px-4">
-                      {section.content}
-                    </div>
-                    <button
-                      className="absolute bottom-2 right-2 text-black text-xl animate-bounce"
-                      aria-label="Next instruction"
-                    >
-                      <FaCaretDown />
-                    </button>
-                  </div>
-                </div>
+                <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
               </div>
-
-              {/* Progress dots */}
-              <div
-                className="fixed bottom-8 left-1/2 flex gap-3 z-50"
-                style={{
-                  transform: `translateY(${Math.sin(scrollY * 0.002) * 5}px)`,
-                  transition: "transform 0.3s ease-out",
-                }}
-              >
-                {sections.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-3 h-3 rounded-full transition-all duration-500 ${i === currentSection
-                        ? `${sections[currentSection].textColor} scale-150 shadow-lg`
-                        : "bg-gray-500"
-                      }`}
-                    style={{
-                      boxShadow:
-                        i === currentSection
-                          ? `0 0 20px ${sections[currentSection].glowColor.includes("blue")
-                            ? "#3b82f6" : sections[currentSection].glowColor.includes("purple")
-                              ? "#a855f7" : sections[currentSection].glowColor.includes("green")
-                                ? "#22c55e" : sections[currentSection].glowColor.includes("orange")
-                                  ? "#f97316" : "#eab308"
-                          }`
-                          : "none",
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Final navigation for last section */}
-              {index === sections.length - 1 && (
-                <div
-                  className="fixed bottom-20 left-1/2 -translate-x-1/2 flex flex-col sm:flex-row gap-6 z-50"
-                >
-                  <button
-                    onClick={() => (window.location.href = "/projects")}
-                    className="group relative overflow-hidden bg-gradient-to-r from-blue-600/80 to-purple-600/80 backdrop-blur-sm text-white px-8 py-4 rounded-full text-xl font-bold transform hover:scale-110 transition-all duration-300 border border-white/20"
-                    style={{
-                      boxShadow: "0 0 30px rgba(59, 130, 246, 0.3)",
-                      filter: "drop-shadow(0 0 20px rgba(59, 130, 246, 0.5))",
-                    }}
-                  >
-                    <span className="relative z-10 flex items-center gap-3">
-                      🚀 <span>Explore Projects</span>
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => (window.location.href = "/contact")}
-                    className="group relative overflow-hidden bg-gradient-to-r from-green-600/80 to-teal-600/80 backdrop-blur-sm text-white px-8 py-4 rounded-full text-xl font-bold transform hover:scale-110 transition-all duration-300 border border-white/20"
-                    style={{
-                      boxShadow: "0 0 30px rgba(34, 197, 94, 0.3)",
-                      filter: "drop-shadow(0 0 20px rgba(34, 197, 94, 0.5))",
-                    }}
-                  >
-                    <span className="relative z-10 flex items-center gap-3">
-                      🔬 <span>Connect</span>
-                    </span>
-                  </button>
-                </div>
-              )}
             </div>
-          );
-        })}
+            <div className="text-gray-400 text-xs font-mono">
+              EXPLORATION PROGRESS
+            </div>
+          </div>
 
-        {/* Extra scroll space for smooth ending */}
-        <div className="h-screen" />
+          {/* Section navigator */}
+          <div className="flex gap-2">
+            {[...Array(totalSections)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => onSectionChange(i)}
+                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
+                  i === currentSection
+                    ? "bg-yellow-400 border-yellow-300 shadow-lg shadow-yellow-400/50"
+                    : i < currentSection
+                    ? "bg-green-400 border-green-300"
+                    : "bg-gray-600 border-gray-500 hover:border-gray-400"
+                }`}
+              >
+                <span className="text-white text-xs font-bold">{i + 1}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </PokemonFrame>
+    </div>
+  );
+};
+
+// Pokemon-style Navigation Menu
+const PokemonMenu = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="fixed top-8 right-8 z-50">
+      <PokemonFrame variant="yellow">
+        <div className="flex gap-4">
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg border-2 border-red-400 transition-all duration-300 transform hover:scale-105"
+          >
+            ← EXIT
+          </button>
+        </div>
+      </PokemonFrame>
+    </div>
+  );
+};
+
+// Main About Component
+const About = () => {
+  const [currentSection, setCurrentSection] = useState(0);
+
+  const sections = [
+    {
+      title: "HYUN SEO JANG",
+      subtitle: "About Me",
+      content:
+        "Hello! I'm a Senior majoring in Computer Science with a minor in Neuroscience at the University of Maryland, College Park. I'm fascinated by how technology and the human body function—two seemingly different worlds I’ve chosen to explore together.",
+      category: "Profile",
+      color: "#60a5fa",
+      modelJSX: (
+        <GraduationHat
+          scale={[2.0, 2.0, 2.0]}
+          rotation={[Math.PI / 12, Math.PI / 20, 0]}
+        />
+      ),
+      skills: ["Computer Science", "Neuroscience", "Curiosity", "Learning"],
+    },
+    {
+      title: "DUAL STUDY",
+      subtitle: "Computer Science × Neuroscience",
+      content:
+        "My dual interests in tech and biology led me to pursue both CS and Neuroscience. I aim to study each field deeply, while exploring how they intersect in areas like brain-computer interfaces and intelligent systems.",
+      category: "Specialty",
+      color: "#a78bfa",
+      modelJSX: (
+        <BrainComp
+          scale={[2.0, 2.0, 2.0]}
+          rotation={[Math.PI / 16, -Math.PI / 2, 0]}
+        />
+      ),
+      skills: [
+        "Interdisciplinary Thinking",
+        "Systems Understanding",
+        "Brain-Computer Interface",
+        "Analytical Skills",
+      ],
+    },
+    {
+      title: "ADVENTURE LOG",
+      subtitle: "Beyond the Lab",
+      content:
+        "Outside of academics, I enjoy soccer, volleyball, reading, gaming, and especially escape rooms and puzzles. I usually spend hours every day reading and challenging myself with brain-teasing fun.",
+      category: "Hobbies",
+      color: "#34d399",
+      modelJSX: (
+        <Hobbies
+          scale={[2.8, 2.8, 2.8]}
+          position={[0, -0.3, 3]}
+          rotation={[Math.PI / 16, 0, 0]}
+        />
+      ),
+      skills: ["Soccer", "Volleyball", "Reading", "Gaming", "Puzzle Solving"],
+    },
+    {
+      title: "FUTURE PATHS",
+      subtitle: "Exploring Projects & Careers",
+      content:
+        "I'm actively exploring new projects, job opportunities, and career directions that align with my values and ambitions. This phase is about learning, experimenting, and building toward a future where I can create meaningful impact through technology and design.",
+      category: "Exploration",
+      color: "#fb923c",
+      modelJSX: (
+        <Compass scale={[1, 1, 1]} rotation={[Math.PI / 8, -Math.PI / 8, 0]} />
+      ),
+      skills: [],
+    },
+
+    {
+      title: "FINAL",
+      subtitle: "Explore More",
+      content:
+        "Thanks for visiting my e-portfolio! Feel free to explore my projects or get in touch to connect.",
+      category: "Future",
+      color: "#fbbf24",
+      modelJSX: <Pokeball1 scale={[0.1, 0.1, 0.1]} />,
+      skills: [],
+    },
+  ];
+
+  // Game-like controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case "ArrowDown":
+        case "s":
+        case "S":
+          e.preventDefault();
+          if (currentSection < sections.length - 1) {
+            setCurrentSection((prev) => prev + 1);
+          }
+          break;
+        case "ArrowUp":
+        case "w":
+        case "W":
+          e.preventDefault();
+          if (currentSection > 0) {
+            setCurrentSection((prev) => prev - 1);
+          }
+          break;
+        case " ":
+          e.preventDefault();
+          if (currentSection < sections.length - 1) {
+            setCurrentSection((prev) => prev + 1);
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+
+      const now = Date.now();
+      if (now - (handleWheel.lastCall || 0) < 1000) return;
+      handleWheel.lastCall = now;
+
+      if (e.deltaY > 0 && currentSection < sections.length - 1) {
+        setCurrentSection((prev) => prev + 1);
+      } else if (e.deltaY < 0 && currentSection > 0) {
+        setCurrentSection((prev) => prev - 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [currentSection, sections.length]);
+
+  return (
+    <div
+      className="min-h-screen text-white overflow-hidden font-mono relative"
+      style={{
+        background:
+          "radial-gradient(ellipse at bottom, #0f1419 0%, #020617 100%)",
+      }}
+    >
+      {/* Animated background stars */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {[...Array(100)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Fairy lights and other UI elements remain the same */}
-      {fairyLights.map((pos, i) => (
-        <div
-          key={i}
-          className="fixed rounded-full bg-white/80 opacity-70"
-          style={{
-            left: pos.left,
-            top: pos.top,
-            width: 8,
-            height: 8,
-            filter: "drop-shadow(0 0 8px rgba(255,255,255,0.8))",
-            transform: `translateX(${Math.cos(scrollY * 0.005 + i) * 30
-              }px) translateY(${Math.sin(scrollY * 0.007 + i) * 25}px) rotate(${scrollY * 0.01 + i * 20
-              }deg)`,
-            transition: "transform 0.1s linear",
-            pointerEvents: "none",
-            zIndex: 15,
-          }}
-        />
-      ))}
-      <button
-        onClick={() =>
-          containerRef.current?.scrollTo({ top: 0, behavior: "smooth" })
-        }
-        className="fixed top-8 right-8 z-50 bg-white/10 backdrop-blur-sm text-white/80 p-3 rounded-full hover:bg-white/20 transition-all duration-300 border border-white/20"
-      >
-        ⬆️
-      </button>
-      <button
-        className="fixed top-8 left-8 z-50 bg-red-600/80 backdrop-blur-sm hover:bg-red-600 text-white p-3 rounded-full shadow-lg transform hover:scale-110 transition-all duration-200 border border-white/20"
-        onClick={() => window.history.back()}
-      >
-        ❌
-      </button>
+      {/* UI Components */}
+      <PokemonHUD
+        currentSection={currentSection}
+        totalSections={sections.length}
+        onSectionChange={setCurrentSection}
+      />
+      <PokemonMenu />
+
+      {/* Main Content */}
+      <main className="relative z-10">
+        {sections.map((section, index) => (
+          <div
+            key={section.category}
+            className={`fixed inset-0 transition-all duration-1000 ease-in-out ${
+              index === currentSection ? "z-20 opacity-100" : "z-10 opacity-0"
+            }`}
+            style={{
+              transform: `translateX(${
+                index === currentSection
+                  ? "0%"
+                  : index < currentSection
+                  ? "-100%"
+                  : "100%"
+              })`,
+            }}
+          >
+            <PokemonSection
+              section={section}
+              index={index}
+              isActive={index === currentSection}
+            />
+          </div>
+        ))}
+      </main>
+
+      {/* Final section action buttons */}
+      {currentSection === sections.length - 1 && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+          <PokemonFrame variant="yellow">
+            <div className="flex gap-6 items-center">
+              <span className="text-yellow-300 font-bold">THE END</span>
+              <button
+                onClick={() => (window.location.href = "/projects")}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 border-2 border-blue-400"
+              >
+                🚀 VIEW PROJECTS
+              </button>
+              <button
+                onClick={() => (window.location.href = "/contact")}
+                className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 hover:scale-110 border-2 border-green-400"
+              >
+                📞 CONNECT
+              </button>
+            </div>
+          </PokemonFrame>
+        </div>
+      )}
+
+      {/* Game-style controls hint */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <div className="bg-black/80 text-white px-4 py-2 rounded-lg border border-gray-600 text-sm font-mono">
+          <div>Controls: ↑↓ WASD Space Scroll</div>
+        </div>
+      </div>
     </div>
   );
 };

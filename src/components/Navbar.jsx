@@ -62,7 +62,7 @@ const Navbar = () => {
       {/* Menu Button */}
       <button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 z-50 text-2xl p-2 rounded focus:outline-none"
+        className="fixed top-4 left-4 z-[9999] text-2xl p-2 rounded focus:outline-none bg-gray-200/30 hover:bg-gray-300/90 backdrop-blur-md transition"
       >
         <FaBars />
       </button>

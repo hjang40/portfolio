@@ -28,11 +28,11 @@ body:has(.card[data-color="green"]:hover) {
   }
 
   .head-text {
-    @apply sm:text-5xl text-3xl font-semibold sm:leading-snug font-poppins;
+    @apply sm:text-5xl text-3xl font-semibold sm:leading-snug ;
   }
 
   .subhead-text {
-    @apply font-semibold sm:text-3xl text-xl relative font-poppins;
+    @apply font-semibold sm:text-3xl text-xl relative;
   }
 
 .text-halo {
@@ -42,6 +42,15 @@ body:has(.card[data-color="green"]:hover) {
     2px -2px 0 #000,  /* top-right black */
    -2px -2px 0 #000,  /* top-left black */
     0 0 5px #fff;     /* optional white glow */
+}
+
+.truncated-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* Adjust the number of lines before truncating */
+  line-clamp: 3; /* Standard property for compatibility */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .blue-gradient_text {
