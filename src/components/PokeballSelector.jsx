@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import Pokeball1 from "../models/Pokeball1";
 
 const PokeballSelector = ({
@@ -21,6 +21,7 @@ const PokeballSelector = ({
   const wobbleRefs = useRef([]);
   const ballRadius = scale[1] * 10; // Pokeball model is ~20 units wide
   const lastMouseX = useRef(0);
+  const canvas = useThree((state) => state.gl.domElement);
 
   const pokeballs = [Pokeball1, Pokeball1, Pokeball1];
 
@@ -80,12 +81,16 @@ const PokeballSelector = ({
     });
   });
 
-  const handlePointerDown = (event) => {
-    event.stopPropagation();
-    if (locked) return;
-    setIsDragging(true);
-    lastMouseX.current = event.clientX;
-  };
+  // A drag can start anywhere on the canvas, not just on a ball (they're small on phones)
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (locked) return;
+      setIsDragging(true);
+      lastMouseX.current = event.clientX;
+    };
+    canvas.addEventListener("pointerdown", handlePointerDown);
+    return () => canvas.removeEventListener("pointerdown", handlePointerDown);
+  }, [canvas, locked]);
 
   const handlePointerMove = (event) => {
     if (!isDragging) return;
@@ -168,11 +173,14 @@ const PokeballSelector = ({
     if (isDragging) {
       document.addEventListener("pointermove", handleGlobalPointerMove);
       document.addEventListener("pointerup", handleGlobalPointerUp);
+      // A cancelled touch (e.g. the browser taking over the gesture) ends the drag like a release
+      document.addEventListener("pointercancel", handleGlobalPointerUp);
     }
 
     return () => {
       document.removeEventListener("pointermove", handleGlobalPointerMove);
       document.removeEventListener("pointerup", handleGlobalPointerUp);
+      document.removeEventListener("pointercancel", handleGlobalPointerUp);
     };
   }, [isDragging, carouselRotation]);
 
@@ -194,12 +202,14 @@ const PokeballSelector = ({
 
   const handlePokeballClick = (index, event) => {
     event.stopPropagation();
+    // A drag that ends over the front ball isn't a click on it
+    if (event.delta > 10) return;
     if (!locked && index === selectedIndex) chooseFront();
   };
 
   return (
     <group position={basePosition}>
-      <group onPointerDown={handlePointerDown}>
+      <group>
         {pokeballs.map((PokeballComponent, index) => {
           const basePos = getPokeballPosition(index, pokeballs.length);
           const angle =

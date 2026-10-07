@@ -127,9 +127,10 @@ const Home = () => {
       );
     } else {
       const text = chosen
-        ? `${destination.name} Pokéball, I choose you!`
-        : `So, you want the ${destination.name} Pokéball?`;
-      dialogue = <DialogueBox key={text} text={text} />;
+        ? `${destination.name} ball, I choose you!`
+        : `So, you want the ${destination.name} ball?`;
+      // Shown instantly so it keeps up while spinning through the balls
+      dialogue = <DialogueBox key={text} text={text} instant />;
     }
   }
 
@@ -137,6 +138,8 @@ const Home = () => {
     <section className="w-full h-screen relative font-pokemon bg-[#101018]">
       <Canvas
         className="w-full h-screen bg-transparent"
+        // Keep the browser from turning finger drags into scrolls/zooms so the carousel gets them
+        style={{ touchAction: "none" }}
         camera={{
           fov,
           position: skipIntro ? INTRO.endPosition : INTRO.startPosition,

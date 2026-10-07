@@ -4,12 +4,13 @@ import textBg from "../assets/images/text.png";
 
 // Pokémon-style text box. Text types out letter by letter; click / Enter / Space
 // first finishes the line, then calls onAdvance (if given). Remount with a new
-// `key` per line so the typing restarts.
-const DialogueBox = ({ text, onAdvance }) => {
-  const [shown, setShown] = useState(0);
+// `key` per line so the typing restarts. `instant` skips the typing.
+const DialogueBox = ({ text, onAdvance, instant = false }) => {
+  const [shown, setShown] = useState(instant ? text.length : 0);
   const done = shown >= text.length;
 
   useEffect(() => {
+    if (instant) return;
     const id = setInterval(() => {
       setShown((count) => {
         if (count >= text.length) clearInterval(id);
@@ -17,7 +18,7 @@ const DialogueBox = ({ text, onAdvance }) => {
       });
     }, 25);
     return () => clearInterval(id);
-  }, [text]);
+  }, [text, instant]);
 
   const advance = () => {
     if (!done) setShown(text.length);

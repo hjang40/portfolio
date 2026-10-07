@@ -39,6 +39,8 @@ body {
   from { opacity: 0; transform: translateX(-40px); }
   to { opacity: 1; transform: translateX(0); }
 }
+@keyframes slot-pop { from { opacity: 0; transform: translateY(6px) scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes cloud-drift { from { transform: translateX(0); } to { transform: translateX(-320px); } }
 @media (prefers-reduced-motion: reduce) {
-  [class*="animate-[slide-in"] { animation: none !important; }
+  [class*="animate-[slide-in"], [class*="animate-[slot-pop"], [class*="animate-[cloud-drift"] { animation: none !important; }
 }
