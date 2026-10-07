@@ -1,524 +1,446 @@
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
+import { Center, useProgress } from "@react-three/drei";
 import { useNavigate } from "react-router-dom";
-import * as THREE from "three";
 import Pokeball1 from "../models/Pokeball1";
-import BrainComp from "../models/Brain_Comp";
+import BrainDesk from "../models/BrainDesk";
 import GraduationHat from "../models/Graduation_Hat";
 import Hobbies from "../models/Hobbies";
 import Compass from "../models/Compass";
+import textBg from "../assets/images/text.png";
 
-// Generated once so the stars don't jump on every re-render
-const STARS = Array.from({ length: 100 }, () => ({
-  left: `${Math.random() * 100}%`,
-  top: `${Math.random() * 100}%`,
-  animationDelay: `${Math.random() * 3}s`,
-  animationDuration: `${2 + Math.random() * 2}s`,
-}));
+// All Sketchfab models below are CC BY 4.0 and must stay credited on the page.
+const credit = (name, author, url) => ({ name, author, url });
 
-// Pokemon-style UI Frame
-const PokemonFrame = ({ children, variant = "blue", className = "" }) => {
-  const colors = {
-    blue: "from-blue-600 to-blue-800",
-    purple: "from-purple-600 to-purple-800",
-    green: "from-green-600 to-green-800",
-    orange: "from-orange-600 to-orange-800",
-    yellow: "from-yellow-600 to-yellow-800",
-  };
+const PAGES = [
+  {
+    title: "TRAINER CARD",
+    model: <GraduationHat rotation={[Math.PI / 12, Math.PI / 20, 0]} />,
+    credits: [
+      credit("Graduation Hat", "DevFaisal", "https://sketchfab.com/3d-models/graduation-hat-b0a7e821403b4c8cb8e1d32ea4075eac"),
+    ],
+    fields: [
+      ["NAME", "Hyun Seo Jang"],
+      ["SCHOOL", "University of Maryland, College Park"],
+      ["DEGREE", "B.S. Computer Science"],
+      ["MINOR", "Neuroscience"],
+      ["GRADUATED", "May 2026"],
+      ["REGION", "Maryland"],
+    ],
+    text: "Hi! I'm Hyun. I graduated from the University of Maryland in May 2026 with a B.S. in Computer Science and a minor in Neuroscience. I've dabbled in web and mobile apps, machine learning, and network security, mostly for classes and on my own time. Since graduating, I've been traveling and exploring.",
+  },
+  {
+    title: "DUAL EDUCATION",
+    model: <BrainDesk rotation={[Math.PI / 16, -0.35, 0]} />,
+    fit: { size: 3.6 },
+    credits: [
+      credit("pc desk", "Joele segreto", "https://sketchfab.com/3d-models/pc-desk-852f5b95e3ff4ef9a662c3190a2426ff"),
+      credit("Brain in a Jar", "Citron Vert", "https://sketchfab.com/3d-models/brain-in-a-jar-6f6f748d02544a779a999d7cc9b0f6a6"),
+    ],
+    types: [
+      {
+        name: "CODE",
+        color: "bg-[#6890f0]",
+        items: ["Artificial Intelligence", "Machine Learning", "Data Science", "Computer & Network Security", "Algorithms"],
+      },
+      {
+        name: "BRAIN",
+        color: "bg-[#f85888]",
+        items: ["Intro to Neuroscience", "Biological Psychology", "Perception", "Neuroscience Seminar", "Data Science in Psychology & Neuroscience"],
+      },
+    ],
+    text: "I'm most interested in where my two fields meet, like brain-computer interfaces and AI modeled on how the brain works.",
+  },
+  {
+    title: "SKILLS",
+    model: <Pokeball1 toon rotation={[0.1, 4.7, 0]} />,
+    credits: [
+      credit("Realistic Pokéball", "SeppeHauspie", "https://sketchfab.com/3d-models/realistic-pokeball-9eb80f026a8947fda580abd229d4f9c8"),
+    ],
+    moves: [
+      ["LANGUAGES", "Python · TypeScript/JavaScript · Java · C/C++ · Dart · SQL · HTML/CSS"],
+      ["FRONTEND & MOBILE", "React · Tailwind CSS · Three.js · Flutter · Android"],
+      ["BACKEND & DATA", "Node.js · PostgreSQL · MongoDB · PyTorch · NumPy"],
+      ["TOOLS", "Git · GitHub · Linux"],
+    ],
+    text: "These are the languages, frameworks, and tools I've learned and use the most.",
+  },
+  {
+    title: "HOBBIES",
+    model: <Hobbies rotation={[Math.PI / 16, 0, 0]} />,
+    // The pile's stray books stretch its bounds; zoom in on the main cluster (edges crop)
+    fit: { size: 10, tilt: 0.3 },
+    credits: [
+      credit("Pile of Books", "M.Reslan", "https://sketchfab.com/3d-models/pile-of-books-468f4357f36c444c807125c7d3f64ed7"),
+      credit("Soccer Ball", "FunctionalResearch_3D", "https://sketchfab.com/3d-models/soccer-ball-a51de12e975a425184496fbabc728ca3"),
+      credit("Volleyball", "LF-Sketcher", "https://sketchfab.com/3d-models/volleyball-f6d0ef5d9f6f4359b7737fdc04b570b0"),
+      credit("Nintendo Switch", "gabriel juan", "https://sketchfab.com/3d-models/nintendo-switch-b94e6a6a8c564fee81c2d794da6c5712"),
+      credit("Bamboo Puzzle Prison House", "trinityscsp", "https://sketchfab.com/3d-models/bamboo-puzzle-prison-house-029bc92ed77040938d2018e79b5bc709"),
+    ],
+    hobbies: ["Soccer", "Volleyball", "Reading", "Gaming", "Puzzles", "Escape rooms", "Board games"],
+    text: "I play soccer and volleyball, read a lot, and play video games. I also love escape rooms, puzzles, and board games.",
+  },
+  {
+    title: "FUTURE GOALS",
+    model: <Compass rotation={[Math.PI / 8, -Math.PI / 8, 0]} />,
+    // The compass sits on a large map; let the map run off the edges so the compass reads
+    fit: { size: 7, tilt: Math.PI / 6 },
+    credits: [
+      credit("compass", "Gnossiennes", "https://sketchfab.com/3d-models/compass-380bd555fe364b03a828d3f5fbf41bfa"),
+    ],
+    journey: [
+      ["Graduated, B.S. Computer Science", "University of Maryland", "May 2026"],
+      ["Substitute Teacher", "Montgomery County Public Schools", "2024 – now"],
+    ],
+    text: "Right now I'm looking for my first software engineering job, somewhere I can keep building apps that people use.",
+    final: true,
+  },
+];
 
-  return (
-    <div className={`relative ${className}`}>
-      {/* Main frame */}
-      <div
-        className={`bg-linear-to-br ${colors[variant]} p-1 rounded-2xl shadow-2xl border-4 border-white/20`}
-      >
-        <div className="bg-gray-900/80 backdrop-blur-xs rounded-xl p-6 border-2 border-gray-700/50">
-          {children}
-        </div>
-      </div>
+// Scales a model so its largest side is `size`, centers it, tilts it toward the camera
+// by `tilt`, and gently sways it.
+const ModelSlot = ({ visible, size = 3, tilt = 0, children }) => {
+  const sway = useRef();
+  const [scale, setScale] = useState(1);
 
-      {/* Corner decorations */}
-      <div className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 rounded-full border-2 border-white"></div>
-      <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full border-2 border-white"></div>
-      <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-green-400 rounded-full border-2 border-white"></div>
-      <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-blue-400 rounded-full border-2 border-white"></div>
-    </div>
-  );
-};
-
-// Generic 3D Model Component that can render different models
-const Animated3DModel = ({ modelJSX, sectionIndex, isActive }) => {
-  const modelRef = useRef();
-  const particleRef = useRef();
-
-  const colors = ["#60a5fa", "#a78bfa", "#34d399", "#fb923c", "#fbbf24"];
-
-  useFrame((state) => {
-    if (modelRef.current) {
-      const time = state.clock.elapsedTime;
-
-      // Set floating animation to a stable sine wave (not adding to position)
-      modelRef.current.position.y = Math.sin(time * 1.2 + sectionIndex) * 0.5;
-
-      // Active scaling effect
-      const targetScale = isActive ? 1.1 : 1.0;
-      modelRef.current.scale.lerp(
-        new THREE.Vector3(targetScale, targetScale, targetScale),
-        0.15
-      );
-    }
-
-    // Energy particles around model
-    if (particleRef.current && isActive) {
-      const time = state.clock.elapsedTime;
-      particleRef.current.rotation.y = time * 2;
-      particleRef.current.children.forEach((particle, i) => {
-        particle.position.y = Math.sin(time * 3 + i) * 0.5;
-        particle.material.opacity = 0.5 + Math.sin(time * 4 + i) * 0.3;
-      });
-    }
+  useFrame(({ clock }) => {
+    if (!sway.current) return;
+    const t = clock.elapsedTime;
+    sway.current.rotation.y = Math.sin(t * 0.6) * 0.35;
+    sway.current.position.y = Math.sin(t * 1.2) * 0.08;
   });
 
   return (
-    <group>
-      <group ref={modelRef}>{modelJSX}</group>
-
-      {/* Energy particles */}
-      {isActive && (
-        <group ref={particleRef}>
-          {[...Array(12)].map((_, i) => (
-            <mesh
-              key={i}
-              position={[Math.cos(i * 0.524) * 4, 0, Math.sin(i * 0.524) * 4]}
-            >
-              <sphereGeometry args={[0.15, 8, 8]} />
-              <meshBasicMaterial color={colors[sectionIndex]} transparent />
-            </mesh>
-          ))}
-        </group>
-      )}
+    <group ref={sway} visible={visible}>
+      <group scale={scale} rotation={[tilt, 0, 0]}>
+        <Center
+          onCentered={({ width, height, depth }) =>
+            setScale(size / Math.max(width, height, depth))
+          }
+        >
+          {children}
+        </Center>
+      </group>
     </group>
   );
 };
 
-// Pokemon-style Section Component
-const PokemonSection = ({ section, index, isActive }) => {
-  const variants = ["blue", "purple", "green", "orange", "yellow"];
-
+// Small Pokéball spinner over the sprite window while models are still downloading
+const ModelLoading = () => {
+  const { active, progress } = useProgress();
+  if (!active) return null;
   return (
-    <div
-      className={`min-h-screen flex items-center justify-between px-8 py-12 transition-all duration-1000 ${
-        isActive ? "opacity-100" : "opacity-30"
-      }`}
-    >
-      {/* Left side - Game UI Style */}
-      <div className="flex-1 max-w-2xl space-y-8">
-        {/* Pokemon-style header */}
-        <PokemonFrame variant={variants[index]} className="inline-block">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-linear-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-              <span className="text-white font-bold text-lg">{index + 1}</span>
-            </div>
-            <div>
-              <div className="text-yellow-300 text-sm font-mono uppercase tracking-wider">
-                {/* {section.category} */}
-              </div>
-              <div className="text-white text-lg font-bold">
-                {section.category}
-              </div>
-            </div>
-          </div>
-        </PokemonFrame>
-
-        {/* Title with Pokemon-style effects */}
-        <div className="space-y-4">
-          <h1 className="text-5xl font-bold text-white leading-tight">
-            {section.title.split(" ").map((word, i) => (
-              <span
-                key={i}
-                className="inline-block mr-4 transition-all duration-700 drop-shadow-lg"
-                style={{
-                  transitionDelay: `${i * 150}ms`,
-                  color: section.color,
-                  transform: isActive
-                    ? "translateY(0) scale(1)"
-                    : "translateY(30px) scale(0.9)",
-                  opacity: isActive ? 1 : 0.7,
-                  textShadow: isActive ? `0 0 20px ${section.color}` : "none",
-                }}
-              >
-                {word}
-              </span>
-            ))}
-          </h1>
-
-          <div className="h-1 w-32 bg-linear-to-r from-yellow-400 via-orange-500 to-red-500 rounded-full"></div>
-        </div>
-
-        {/* Pokemon-style text box */}
-        <PokemonFrame variant={variants[index]} className="max-w-xl">
-          <div className="space-y-4">
-            <h2 className="text-xl text-yellow-300 font-semibold border-b border-gray-600 pb-2">
-              {section.subtitle}
-            </h2>
-            <p className="text-gray-300 leading-relaxed text-lg font-mono">
-              {section.content}
-            </p>
-          </div>
-        </PokemonFrame>
-
-        {/* Skills as Pokemon-style badges */}
-        {section.skills && (
-          <div className="space-y-4">
-            <div className="text-yellow-300 font-bold text-lg flex items-center gap-2">
-              <span>⭐</span> SKILLS
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {section.skills.map((skill, i) => (
-                <div
-                  key={i}
-                  className="bg-linear-to-r from-gray-800 to-gray-700 px-4 py-3 rounded-xl border-2 border-gray-600 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-white font-mono text-sm">
-                      {skill}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Right side - 3D Model */}
-      <div className="flex-1 flex justify-center items-center relative h-screen">
-        <Canvas
-          camera={{ position: [0, 0, 8], fov: 50 }}
-          style={{
-            width: "100%",
-            height: "100%",
-            position: "absolute",
-            top: 0,
-            right: 0,
-          }}
-          gl={{ alpha: true, antialias: true }}
-        >
-          <Suspense fallback={null}>
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[5, 5, 5]} intensity={1.2} />
-            <pointLight
-              position={[-5, -5, 5]}
-              intensity={0.8}
-              color={section.color}
-            />
-
-            <Animated3DModel
-              modelJSX={section.modelJSX}
-              sectionIndex={index}
-              isActive={isActive}
-            />
-          </Suspense>
-        </Canvas>
-      </div>
+    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-[10px] text-[#484878]">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-black bg-[linear-gradient(to_bottom,#e3350d_0_46%,#111_46%_54%,#f5f5f5_54%)]" />
+      {Math.round(progress)}%
     </div>
   );
 };
 
-// Pokemon-style Progress HUD
-const PokemonHUD = ({ currentSection, totalSections, onSectionChange }) => {
-  const progress = ((currentSection + 1) / totalSections) * 100;
+// Colors from the intro's FireRed room: the checkered desk top and the cream wall
+const DESK_CHECKER = "repeating-conic-gradient(#e8dc9c 0% 25%, #d8c87c 0% 50%)";
+const WALL = "#f4ecd8";
 
-  return (
-    <div className="fixed top-8 left-8 z-50">
-      <PokemonFrame variant="blue" className="w-64">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-yellow-300 font-bold text-sm">JOURNEY</span>
-            <span className="text-white font-mono text-sm">
-              {currentSection + 1}/{totalSections}
+const Frame = ({ children, className = "" }) => (
+  <div className={`rounded-md border-4 border-[#484878] bg-[#f8f8f0] shadow-[inset_0_0_0_2px_#c8c8e0] ${className}`}>
+    {children}
+  </div>
+);
+
+// Tiny CSS Pokéball: red top, black band, white bottom. `empty` draws a grey one.
+const MiniBall = ({ empty = false, className = "" }) => (
+  <span
+    aria-hidden
+    className={`inline-block rounded-full border-2 border-[#202030] ${className}`}
+    style={{
+      background: empty
+        ? "linear-gradient(to bottom, #c8c8d0 0 44%, #202030 44% 56%, #e8e8f0 56%)"
+        : "linear-gradient(to bottom, #e3350d 0 44%, #202030 44% 56%, #f8f8f8 56%)",
+    }}
+  />
+);
+
+const PageBody = ({ page }) => {
+  if (page.fields) {
+    return (
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs sm:text-sm">
+        {page.fields.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-[#484878]">{label}</dt>
+            <dd className="text-black">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+  if (page.types) {
+    return (
+      <div className="grid sm:grid-cols-2 gap-4">
+        {page.types.map((type) => (
+          <div key={type.name}>
+            <span className={`inline-block ${type.color} text-white text-xs px-3 py-1 rounded border-2 border-black/30 mb-2`}>
+              {type.name}
             </span>
+            <ul className="text-[11px] sm:text-xs space-y-1 text-black">
+              {type.items.map((item) => <li key={item}>▸ {item}</li>)}
+            </ul>
           </div>
-
-          {/* Pokemon-style health bar as progress */}
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-700 rounded-full overflow-hidden border-2 border-gray-600">
-              <div
-                className="h-full bg-linear-to-r from-green-400 via-yellow-400 to-red-400 rounded-full transition-all duration-1000 ease-out relative"
-                style={{ width: `${progress}%` }}
-              >
-                <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
-              </div>
-            </div>
-            <div className="text-gray-400 text-xs font-mono">
-              EXPLORATION PROGRESS
-            </div>
-          </div>
-
-          {/* Section navigator */}
-          <div className="flex gap-2">
-            {[...Array(totalSections)].map((_, i) => (
-              <button
-                key={i}
-                onClick={() => onSectionChange(i)}
-                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
-                  i === currentSection
-                    ? "bg-yellow-400 border-yellow-300 shadow-lg shadow-yellow-400/50"
-                    : i < currentSection
-                    ? "bg-green-400 border-green-300"
-                    : "bg-gray-600 border-gray-500 hover:border-gray-400"
-                }`}
-              >
-                <span className="text-white text-xs font-bold">{i + 1}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </PokemonFrame>
-    </div>
-  );
+        ))}
+      </div>
+    );
+  }
+  if (page.moves) {
+    return (
+      <ul className="grid gap-2">
+        {page.moves.map(([name, list]) => (
+          <li key={name} className="rounded border-2 border-[#484878] bg-white px-3 py-2">
+            <p className="text-xs text-[#484878]">{name}</p>
+            <p className="text-[11px] sm:text-xs text-black leading-relaxed">{list}</p>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (page.hobbies) {
+    return (
+      <ul className="flex flex-wrap gap-2">
+        {page.hobbies.map((hobby) => (
+          <li key={hobby} className="rounded-full border-2 border-[#484878] bg-white px-3 py-1 text-xs text-black">
+            {hobby}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (page.journey) {
+    return (
+      <ol className="space-y-2 border-l-4 border-[#484878] pl-4">
+        {page.journey.map(([role, org, when]) => (
+          <li key={role} className="text-black">
+            <p className="text-xs">{role}</p>
+            <p className="text-[11px] text-[#484878]">{org} · {when}</p>
+          </li>
+        ))}
+      </ol>
+    );
+  }
+  return null;
 };
 
-// Pokemon-style Navigation Menu
-const PokemonMenu = () => {
-  const navigate = useNavigate();
-
-  return (
-    <div className="fixed top-8 right-8 z-50">
-      <PokemonFrame variant="yellow">
-        <div className="flex gap-4">
-          <button
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg border-2 border-red-400 transition-all duration-300 transform hover:scale-105"
-          >
-            ← EXIT
-          </button>
-        </div>
-      </PokemonFrame>
-    </div>
-  );
-};
-
-// Main About Component
 const About = () => {
   const navigate = useNavigate();
-  const [currentSection, setCurrentSection] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  // White overlay: starts opaque (matching the intro's fade-out), fades in, and fades out before leaving
+  const [whiteOut, setWhiteOut] = useState(true);
+  const scrollRef = useRef(null);
+  const swipeStart = useRef(null);
+  const lastWheel = useRef(0);
+  const page = PAGES[pageIndex];
 
-  const sections = [
-    {
-      title: "HYUN SEO JANG",
-      subtitle: "About Me",
-      content:
-        "Hello! I'm a Senior majoring in Computer Science with a minor in Neuroscience at the University of Maryland, College Park. I'm fascinated by how technology and the human body function—two seemingly different worlds I’ve chosen to explore together.",
-      category: "Profile",
-      color: "#60a5fa",
-      modelJSX: (
-        <GraduationHat
-          scale={[2.0, 2.0, 2.0]}
-          rotation={[Math.PI / 12, Math.PI / 20, 0]}
-        />
-      ),
-      skills: ["Computer Science", "Neuroscience", "Curiosity", "Learning"],
-    },
-    {
-      title: "DUAL STUDY",
-      subtitle: "Computer Science × Neuroscience",
-      content:
-        "My dual interests in tech and biology led me to pursue both CS and Neuroscience. I aim to study each field deeply, while exploring how they intersect in areas like brain-computer interfaces and intelligent systems.",
-      category: "Specialty",
-      color: "#a78bfa",
-      modelJSX: (
-        <BrainComp
-          scale={[2.0, 2.0, 2.0]}
-          rotation={[Math.PI / 16, -Math.PI / 2, 0]}
-        />
-      ),
-      skills: [
-        "Interdisciplinary Thinking",
-        "Systems Understanding",
-        "Brain-Computer Interface",
-        "Analytical Skills",
-      ],
-    },
-    {
-      title: "ADVENTURE LOG",
-      subtitle: "Beyond the Lab",
-      content:
-        "Outside of academics, I enjoy soccer, volleyball, reading, gaming, and especially escape rooms and puzzles. I usually spend hours every day reading and challenging myself with brain-teasing fun.",
-      category: "Hobbies",
-      color: "#34d399",
-      modelJSX: (
-        <Hobbies
-          scale={[2.8, 2.8, 2.8]}
-          position={[0, -0.3, 3]}
-          rotation={[Math.PI / 16, 0, 0]}
-        />
-      ),
-      skills: ["Soccer", "Volleyball", "Reading", "Gaming", "Puzzle Solving"],
-    },
-    {
-      title: "FUTURE PATHS",
-      subtitle: "Exploring Projects & Careers",
-      content:
-        "I'm actively exploring new projects, job opportunities, and career directions that align with my values and ambitions. This phase is about learning, experimenting, and building toward a future where I can create meaningful impact through technology and design.",
-      category: "Exploration",
-      color: "#fb923c",
-      modelJSX: (
-        <Compass scale={[1, 1, 1]} rotation={[Math.PI / 8, -Math.PI / 8, 0]} />
-      ),
-      skills: [],
-    },
-
-    {
-      title: "FINAL",
-      subtitle: "Explore More",
-      content:
-        "Thanks for visiting my e-portfolio! Feel free to explore my projects or get in touch to connect.",
-      category: "Future",
-      color: "#fbbf24",
-      modelJSX: <Pokeball1 scale={[0.1, 0.1, 0.1]} />,
-      skills: [],
-    },
-  ];
-
-  // Game-like controls
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      switch (e.key) {
-        case "ArrowDown":
-        case "s":
-        case "S":
-          e.preventDefault();
-          if (currentSection < sections.length - 1) {
-            setCurrentSection((prev) => prev + 1);
-          }
-          break;
-        case "ArrowUp":
-        case "w":
-        case "W":
-          e.preventDefault();
-          if (currentSection > 0) {
-            setCurrentSection((prev) => prev - 1);
-          }
-          break;
-        case " ":
-          e.preventDefault();
-          if (currentSection < sections.length - 1) {
-            setCurrentSection((prev) => prev + 1);
-          }
-          break;
-        default:
-          break;
-      }
+    const id = requestAnimationFrame(() => setWhiteOut(false));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const goTo = (index) => {
+    if (index < 0 || index >= PAGES.length || index === pageIndex) return;
+    setDirection(index > pageIndex ? 1 : -1);
+    setPageIndex(index);
+    scrollRef.current?.scrollTo({ top: 0 });
+  };
+
+  const leaveTo = (path) => {
+    setWhiteOut(true);
+    setTimeout(() => navigate(path), 500);
+  };
+
+  useEffect(() => {
+    const handleKey = (event) => {
+      if (["ArrowRight", "d", "D"].includes(event.key)) goTo(pageIndex + 1);
+      if (["ArrowLeft", "a", "A"].includes(event.key)) goTo(pageIndex - 1);
     };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  });
 
-    const handleWheel = (e) => {
-      e.preventDefault();
+  // Horizontal swipe turns the page; vertical movement is left to native scrolling
+  const handlePointerDown = (event) => {
+    swipeStart.current = { x: event.clientX, y: event.clientY };
+  };
+  const handlePointerUp = (event) => {
+    if (!swipeStart.current) return;
+    const dx = event.clientX - swipeStart.current.x;
+    const dy = event.clientY - swipeStart.current.y;
+    swipeStart.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      goTo(pageIndex + (dx < 0 ? 1 : -1));
+    }
+  };
 
-      const now = Date.now();
-      if (now - (handleWheel.lastCall || 0) < 1000) return;
-      handleWheel.lastCall = now;
-
-      if (e.deltaY > 0 && currentSection < sections.length - 1) {
-        setCurrentSection((prev) => prev + 1);
-      } else if (e.deltaY < 0 && currentSection > 0) {
-        setCurrentSection((prev) => prev - 1);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("wheel", handleWheel, { passive: false });
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("wheel", handleWheel);
-    };
-  }, [currentSection, sections.length]);
+  // The wheel turns the page only once the card can't scroll any further that way
+  const handleWheel = (event) => {
+    const el = scrollRef.current;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    const canScroll = delta > 0
+      ? el.scrollTop + el.clientHeight < el.scrollHeight - 1
+      : el.scrollTop > 0;
+    if (canScroll || Math.abs(delta) < 20) return;
+    const now = Date.now();
+    if (now - lastWheel.current < 700) return;
+    lastWheel.current = now;
+    goTo(pageIndex + (delta > 0 ? 1 : -1));
+  };
 
   return (
     <div
-      className="min-h-screen text-white overflow-hidden font-mono relative"
-      style={{
-        background:
-          "radial-gradient(ellipse at bottom, #0f1419 0%, #020617 100%)",
-      }}
+      className="min-h-dvh font-pokemon flex items-center justify-center p-3 pt-16 sm:p-6 sm:pt-16"
+      style={{ background: `${DESK_CHECKER} 0 0 / 48px 48px` }}
     >
-      {/* Animated background stars */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {STARS.map((style, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={style}
-          />
-        ))}
-      </div>
-
-      {/* UI Components */}
-      <PokemonHUD
-        currentSection={currentSection}
-        totalSections={sections.length}
-        onSectionChange={setCurrentSection}
-      />
-      <PokemonMenu />
-
-      {/* Main Content */}
-      <main className="relative z-10">
-        {sections.map((section, index) => (
-          <div
-            key={section.category}
-            className={`fixed inset-0 transition-all duration-1000 ease-in-out ${
-              index === currentSection ? "z-20 opacity-100" : "z-10 opacity-0"
-            }`}
-            style={{
-              transform: `translateX(${
-                index === currentSection
-                  ? "0%"
-                  : index < currentSection
-                  ? "-100%"
-                  : "100%"
-              })`,
-            }}
-          >
-            <PokemonSection
-              section={section}
-              index={index}
-              isActive={index === currentSection}
-            />
-          </div>
-        ))}
-      </main>
-
-      {/* Final section action buttons */}
-      {currentSection === sections.length - 1 && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
-          <PokemonFrame variant="yellow">
-            <div className="flex gap-6 items-center">
-              <span className="text-yellow-300 font-bold">THE END</span>
+      <div
+        className="w-full max-w-5xl"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onWheel={handleWheel}
+        style={{ touchAction: "pan-y" }}
+      >
+        <Frame className="flex max-h-[calc(100dvh-4.75rem)] flex-col overflow-hidden shadow-[6px_6px_0_rgba(16,16,24,0.35),inset_0_0_0_2px_#c8c8e0] sm:max-h-[calc(100dvh-5.5rem)]">
+          {/* Header */}
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b-4 border-[#e3350d] bg-[#484878] px-4 py-2 text-white">
+            <h1 className="flex items-center gap-2 text-xs sm:text-lg sm:tracking-wide whitespace-nowrap">
+              <MiniBall className="h-4 w-4 sm:h-5 sm:w-5" />
+              {page.title}
+            </h1>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs whitespace-nowrap">{pageIndex + 1}/{PAGES.length}</span>
               <button
-                onClick={() => navigate("/projects")}
-                className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 border-2 border-blue-400"
+                onClick={() => leaveTo("/")}
+                className="rounded bg-[#e3350d] px-3 py-1 text-xs whitespace-nowrap hover:brightness-110"
               >
-                🚀 VIEW PROJECTS
-              </button>
-              <button
-                onClick={() => navigate("/contact")}
-                className="px-6 py-3 bg-linear-to-r from-green-600 to-teal-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 hover:scale-110 border-2 border-green-400"
-              >
-                📞 CONNECT
+                ← EXIT
               </button>
             </div>
-          </PokemonFrame>
-        </div>
-      )}
+          </div>
 
-      {/* Game-style controls hint */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <div className="bg-black/80 text-white px-4 py-2 rounded-lg border border-gray-600 text-sm font-mono">
-          <div>Controls: ↑↓ WASD Space Scroll</div>
-        </div>
+          <div
+            ref={scrollRef}
+            className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+              {/* Sprite window: one shared canvas, only the current page's model is visible */}
+              <Frame className="relative order-first md:order-last h-56 sm:h-72 md:h-80 overflow-hidden">
+                {/* Solid cream backdrop (the intro room's wall color) behind the transparent canvas */}
+                <div aria-hidden className="absolute inset-0" style={{ background: WALL }} />
+                <Canvas camera={{ position: [0, 0, 6], fov: 40 }} dpr={[1, 2]}>
+                  <ambientLight intensity={0.8} />
+                  <directionalLight position={[4, 5, 5]} intensity={1.6} />
+                  {/* One Suspense per model so the current page's model shows as soon as it loads */}
+                  {PAGES.map((p, i) => (
+                    <Suspense key={p.title} fallback={null}>
+                      <ModelSlot visible={i === pageIndex} {...p.fit}>
+                        {p.model}
+                      </ModelSlot>
+                    </Suspense>
+                  ))}
+                </Canvas>
+                <ModelLoading />
+              </Frame>
+
+              <div
+                key={pageIndex}
+                className={direction > 0
+                  ? "animate-[slide-in-from-right_300ms_ease-out]"
+                  : "animate-[slide-in-from-left_300ms_ease-out]"}
+              >
+                <PageBody page={page} />
+              </div>
+            </div>
+
+            {/* FireRed-style text box */}
+            <div
+              key={`text-${pageIndex}`}
+              className="mt-4 bg-white px-4 py-3 sm:px-6 text-xs sm:text-sm leading-relaxed text-black animate-[slide-in-from-right_300ms_ease-out]"
+              // border-image keeps the FireRed frame a fixed thickness however tall the text gets
+              // (a stretched background made the frame thicker and crowd long text)
+              style={{
+                borderStyle: "solid",
+                borderWidth: "10px",
+                borderImage: `url(${textBg}) 30 fill / 10px stretch`,
+                imageRendering: "pixelated",
+              }}
+            >
+              {page.text}
+            </div>
+
+            {page.final && (
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <button onClick={() => leaveTo("/projects")} className="rounded border-4 border-[#484878] bg-[#6890f0] px-4 py-2 text-xs text-white hover:brightness-110">
+                  VIEW PROJECTS
+                </button>
+                <button onClick={() => leaveTo("/contact")} className="rounded border-4 border-[#484878] bg-[#78c850] px-4 py-2 text-xs text-white hover:brightness-110">
+                  CONTACT ME
+                </button>
+              </div>
+            )}
+
+            <p className="mt-4 font-sans text-[10px] text-[#484878]/80">
+              3D:{" "}
+              {page.credits.map((c, i) => (
+                <span key={c.url}>
+                  {i > 0 && ", "}
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline">
+                    {c.name}
+                  </a>{" "}
+                  by {c.author}
+                </span>
+              ))}{" "}
+              (
+              <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline">
+                CC BY 4.0
+              </a>
+              )
+            </p>
+          </div>
+
+          {/* Page navigation */}
+          <nav className="flex shrink-0 items-center justify-center gap-3 border-t-4 border-[#484878] bg-[#e0e0f0] px-4 py-2" aria-label="Trainer card pages">
+            <button
+              onClick={() => goTo(pageIndex - 1)}
+              disabled={pageIndex === 0}
+              aria-label="Previous page"
+              className="text-[#484878] text-lg disabled:opacity-30"
+            >
+              ◀
+            </button>
+            {PAGES.map((p, i) => (
+              <button
+                key={p.title}
+                onClick={() => goTo(i)}
+                aria-label={`Go to ${p.title}`}
+                aria-current={i === pageIndex ? "page" : undefined}
+                className="flex"
+              >
+                <MiniBall
+                  empty={i !== pageIndex}
+                  className={`transition-transform ${i === pageIndex ? "h-5 w-5" : "h-4 w-4 hover:scale-110"}`}
+                />
+              </button>
+            ))}
+            <button
+              onClick={() => goTo(pageIndex + 1)}
+              disabled={pageIndex === PAGES.length - 1}
+              aria-label="Next page"
+              className="text-[#484878] text-lg disabled:opacity-30"
+            >
+              ▶
+            </button>
+          </nav>
+        </Frame>
       </div>
+
+      <div
+        className={`fixed inset-0 z-50 bg-white pointer-events-none transition-opacity duration-500 ${whiteOut ? "opacity-100" : "opacity-0"}`}
+      />
     </div>
   );
 };

@@ -2,9 +2,10 @@ import React from "react";
 import { useGLTF } from "@react-three/drei";
 
 import graduation_hat from "../assets/3d/graduation_hat.glb";
+import { DRACO_PATH } from "./draco";
 
 const GraduationHat = (props) => {
-  const { nodes, materials } = useGLTF(graduation_hat);
+  const { nodes, materials } = useGLTF(graduation_hat, DRACO_PATH);
   return (
     <group {...props} dispose={null}>
       <group rotation={[-Math.PI / 2, 0, -2.644]}>

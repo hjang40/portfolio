@@ -87,7 +87,7 @@ export const projectData = [
     id: 3,
     name: "E-Commerce Website & Business",
     description:
-      "Co-Founder & Lead Developer at Brickd Up Studios. Delivered a headless e-commerce site from concept to launch in 4 weeks using Shopify Hydrogen and React. Scored 99 on Google Lighthouse. Eliminated reliance on expensive third-party apps and supported an initial catalog of 120 products.",
+      "An online store I built for Brickd Up Studios with Shopify Hydrogen and React. It went from first sketch to launch in about four weeks and started with 120 products. It scores 99 on Google Lighthouse, and it doesn't rely on any paid third-party Shopify apps.",
     category: "Web Application",
     timeFrame: "Jul 2025 – Present",
     skills: ["Shopify Hydrogen", "React", "Web Performance", "E-Commerce"],

@@ -10,9 +10,10 @@ import React from "react";
 import { useGLTF } from "@react-three/drei";
 
 import compass from "../assets/3d/compass.glb";
+import { DRACO_PATH } from "./draco";
 
 const Compass = (props) => {
-  const { nodes, materials } = useGLTF(compass);
+  const { nodes, materials } = useGLTF(compass, DRACO_PATH);
   return (
     <group {...props} dispose={null}>
       <group rotation={[-Math.PI / 2, 0, 0]}>

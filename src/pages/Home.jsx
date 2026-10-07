@@ -192,7 +192,7 @@ const Home = () => {
 
       {dialogue}
 
-      {/* Required by the room model's CC-BY-4.0 license */}
+      {/* Required by the room and Pokéball models' CC-BY-4.0 licenses */}
       <p className="absolute bottom-2 right-3 text-[10px] text-white/60 font-sans">
         Room:{" "}
         <a
@@ -203,7 +203,16 @@ const Home = () => {
         >
           "Pokemon FireRed - Player's Room"
         </a>{" "}
-        by Wesai,{" "}
+        by Wesai;{" "}
+        <a
+          href="https://sketchfab.com/3d-models/realistic-pokeball-9eb80f026a8947fda580abd229d4f9c8"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-white"
+        >
+          "Realistic Pokéball"
+        </a>{" "}
+        by SeppeHauspie,{" "}
         <a
           href="https://creativecommons.org/licenses/by/4.0/"
           target="_blank"

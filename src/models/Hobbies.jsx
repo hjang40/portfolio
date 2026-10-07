@@ -6,9 +6,10 @@ import React from "react";
 import { useGLTF } from "@react-three/drei";
 
 import hobbies from "../assets/3d/hobbies.glb";
+import { DRACO_PATH } from "./draco";
 
 const Hobbies = (props) => {
-  const { nodes, materials } = useGLTF(hobbies);
+  const { nodes, materials } = useGLTF(hobbies, DRACO_PATH);
   return (
     <group {...props} dispose={null}>
       <group

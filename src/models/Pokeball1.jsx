@@ -9,9 +9,7 @@ import { a, useSpring } from "@react-spring/three";
 import * as THREE from "three";
 
 import pokeball from "../assets/3d/pokeball1.glb";
-
-// Draco decoder served from public/draco/ instead of Google's CDN
-const DRACO_PATH = `${import.meta.env.BASE_URL}draco/`;
+import { DRACO_PATH } from "./draco";
 
 // 3 flat light bands (shadow / mid / lit) for the cel-shaded look
 const TOON_GRADIENT = new THREE.DataTexture(
