@@ -6,7 +6,7 @@ Source: https://sketchfab.com/3d-models/compass-380bd555fe364b03a828d3f5fbf41bfa
 Title: compass
 */
 
-import React, { useRef } from "react";
+import React from "react";
 import { useGLTF } from "@react-three/drei";
 
 import compass from "../assets/3d/compass.glb";

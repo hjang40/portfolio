@@ -33,7 +33,7 @@ const ProjectGrid = ({ filteredProjects, openProject }) => {
                     <img
                       src={firstMedia}
                       alt={project.name}
-                      className="w-12 h-12 object-cover rounded"
+                      className="w-12 h-12 object-cover rounded-sm"
                     />
                   )}
                   <p className="text-xs mt-1 font-bold text-center truncate w-full px-1">
@@ -46,19 +46,6 @@ const ProjectGrid = ({ filteredProjects, openProject }) => {
             </div>
           );
         })}
-      </div>
-
-      {/* Box Controls */}
-      <div className="flex gap-4">
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-colors">
-          ← Previous Box
-        </button>
-        <span className="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold">
-          Box 1 / 5
-        </span>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-colors">
-          Next Box →
-        </button>
       </div>
     </div>
   );

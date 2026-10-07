@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import Pokeball1 from "../models/Pokeball1";
-import Pokeball2 from "../models/Pokeball2";
-import Pokeball3 from "../models/Pokeball3";
 
 const PokeballSelector = ({
   scale,
@@ -10,17 +8,21 @@ const PokeballSelector = ({
   rotation,
   onPokeballClick,
   onSelectionChange,
+  radius = 0.5,
+  toon = false,
+  locked = false, // ignore all input (e.g. once a ball has been chosen)
+  canChoose = true, // whether Enter/Space picks the front ball
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isHoveringPokeball, setIsHoveringPokeball] = useState(false);
   const [carouselRotation, setCarouselRotation] = useState(0);
   const pokeballRefs = useRef([]);
+  const wobbleRefs = useRef([]);
+  const ballRadius = scale[1] * 10; // Pokeball model is ~20 units wide
   const lastMouseX = useRef(0);
-  const { gl } = useThree();
 
-  const pokeballs = [Pokeball1, Pokeball2, Pokeball3];
-  const radius = 0.5;
+  const pokeballs = [Pokeball1, Pokeball1, Pokeball1];
 
   const getFrontPokeballPosition = () => {
     let closestIndex = 0;
@@ -46,9 +48,10 @@ const PokeballSelector = ({
   };
 
   const animateToRotation = (startRotation, targetRotation, duration = 300) => {
-    const startTime = Date.now();
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
+    let startTime = null;
+    const animate = (timestamp) => {
+      startTime ??= timestamp;
+      const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const easeOut = 1 - Math.pow(1 - progress, 3);
       const currentRotation =
@@ -65,11 +68,23 @@ const PokeballSelector = ({
     return [Math.sin(angle) * radius, 0, Math.cos(angle) * radius];
   };
 
+  // The selected ball wobbles side to side like a ball mid-catch:
+  // three rocks on its base, then a pause, repeating.
+  useFrame(({ clock }) => {
+    const phase = clock.elapsedTime % 1.8;
+    const wobble = phase < 0.9 ? Math.sin((phase / 0.9) * Math.PI * 3) * 0.3 : 0;
+    wobbleRefs.current.forEach((group, index) => {
+      if (!group) return;
+      const isWobbling = index === selectedIndex && !isDragging && !locked;
+      group.rotation.z = isWobbling ? wobble : 0;
+    });
+  });
+
   const handlePointerDown = (event) => {
     event.stopPropagation();
+    if (locked) return;
     setIsDragging(true);
     lastMouseX.current = event.clientX;
-    gl.domElement.style.cursor = "grabbing";
   };
 
   const handlePointerMove = (event) => {
@@ -118,7 +133,11 @@ const PokeballSelector = ({
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === "ArrowLeft") {
+      if (locked) return;
+      if ((event.key === "Enter" || event.key === " ") && canChoose) {
+        event.preventDefault();
+        chooseFront();
+      } else if (event.key === "ArrowLeft") {
         event.preventDefault();
         const segmentSize = (Math.PI * 2) / pokeballs.length;
         const newRotation = carouselRotation + segmentSize;
@@ -140,7 +159,7 @@ const PokeballSelector = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, carouselRotation]);
+  }, [selectedIndex, carouselRotation, locked, canChoose]);
 
   useEffect(() => {
     const handleGlobalPointerMove = (event) => handlePointerMove(event);
@@ -158,25 +177,24 @@ const PokeballSelector = ({
   }, [isDragging, carouselRotation]);
 
   useEffect(() => {
-    if (isDragging) {
-      gl.domElement.style.cursor = "grabbing";
-    } else if (isHoveringPokeball) {
-      gl.domElement.style.cursor = "grab";
-    } else {
-      gl.domElement.style.cursor = "default";
-    }
+    document.body.style.cursor = isDragging
+      ? "grabbing"
+      : isHoveringPokeball
+      ? "grab"
+      : "";
+    return () => {
+      document.body.style.cursor = "";
+    };
   }, [isDragging, isHoveringPokeball]);
+
+  function chooseFront() {
+    pokeballRefs.current[selectedIndex]?.triggerAnimation?.();
+    onPokeballClick?.(getFrontPokeballPosition(), selectedIndex);
+  }
 
   const handlePokeballClick = (index, event) => {
     event.stopPropagation();
-    if (index === selectedIndex) {
-      const pokeballRef = pokeballRefs.current[index];
-      if (pokeballRef && pokeballRef.triggerAnimation) {
-        pokeballRef.triggerAnimation();
-      }
-      const worldPos = getFrontPokeballPosition();
-      if (onPokeballClick) onPokeballClick(worldPos, index);
-    }
+    if (!locked && index === selectedIndex) chooseFront();
   };
 
   return (
@@ -186,23 +204,30 @@ const PokeballSelector = ({
           const basePos = getPokeballPosition(index, pokeballs.length);
           const angle =
             (index / pokeballs.length) * Math.PI * 2 + carouselRotation;
-          const rotatedPosition = [
+          // Pivot sits at the ball's base so the wobble rocks it in place
+          const pivotPosition = [
             Math.sin(angle) * radius,
-            basePos[1],
+            basePos[1] - ballRadius,
             Math.cos(angle) * radius,
           ];
 
           return (
-            <PokeballComponent
+            <group
               key={index}
-              ref={(el) => (pokeballRefs.current[index] = el)}
-              position={rotatedPosition}
-              scale={scale}
-              rotation={rotation}
-              onClick={(event) => handlePokeballClick(index, event)}
-              onPointerOver={() => setIsHoveringPokeball(true)}
-              onPointerOut={() => setIsHoveringPokeball(false)}
-            />
+              ref={(el) => (wobbleRefs.current[index] = el)}
+              position={pivotPosition}
+            >
+              <PokeballComponent
+                ref={(el) => (pokeballRefs.current[index] = el)}
+                position={[0, ballRadius, 0]}
+                scale={scale}
+                rotation={rotation}
+                toon={toon}
+                onClick={(event) => handlePokeballClick(index, event)}
+                onPointerOver={() => setIsHoveringPokeball(true)}
+                onPointerOut={() => setIsHoveringPokeball(false)}
+              />
+            </group>
           );
         })}
       </group>

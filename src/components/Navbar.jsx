@@ -62,27 +62,33 @@ const Navbar = () => {
       {/* Menu Button */}
       <button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 z-[9999] text-2xl p-2 rounded focus:outline-none bg-gray-200/30 hover:bg-gray-300/90 backdrop-blur-md transition"
+        aria-label={menuOpen ? "Close menu" : "Open menu"}
+        className="fixed top-4 left-4 z-9999 text-2xl p-2 rounded-sm focus:outline-hidden bg-gray-200/30 hover:bg-gray-300/90 backdrop-blur-md transition"
       >
         <FaBars />
       </button>
 
       {menuOpen && (
-        <div className="fixed inset-0 z-40">
+        // Above every page's own fixed UI (z-50), just under the menu button (z-9999)
+        <div className="fixed inset-0 z-9998">
           {/* Overlay to detect outside clicks */}
           <div className="absolute inset-0 bg-black/30"></div>
 
           <nav
             ref={menuRef}
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-xl overflow-hidden shadow-lg"
-            style={{ width: "1024px", height: "768px" }}
+            // Full 1024x768 on desktop, shrinks to fit phone screens
+            style={{
+              width: "min(1024px, calc(100vw - 1.5rem))",
+              height: "min(768px, calc(100dvh - 1.5rem))",
+            }}
           >
             {/* Base background */}
             <div
               className="absolute inset-0 bg-center bg-no-repeat"
               style={{
                 backgroundImage: `url(${background})`,
-                backgroundSize: "contain",
+                backgroundSize: "cover",
               }}
             />
 
@@ -109,13 +115,13 @@ const Navbar = () => {
             />
 
             {/* Current time inside menu, top-left */}
-            <div className="font-pokemon absolute top-3 left-3 z-10 text-white text-lg drop-shadow">
+            <div className="font-pokemon absolute top-3 left-16 sm:left-3 z-10 text-white text-lg drop-shadow-sm">
               {formattedTime}
             </div>
 
             {/* Panels grid */}
             <div
-              className="font-pokemon absolute left-0 right-0 grid grid-cols-2 grid-rows-3 p-8 gap-6"
+              className="font-pokemon absolute left-0 right-0 grid grid-cols-1 auto-rows-fr sm:grid-cols-2 sm:grid-rows-3 p-4 sm:p-8 gap-3 sm:gap-6"
               style={{
                 top: `${topOverlayHeight}px`,
                 bottom: `${bottomOverlayHeight}px`,
@@ -134,7 +140,7 @@ const Navbar = () => {
                         }}
                       >
                         <span
-                          className={`z-10 text-[35px] font-pokemon transition duration-200 ease-in-out text-white `}
+                          className={`z-10 text-2xl sm:text-[35px] font-pokemon transition duration-200 ease-in-out text-white `}
                           style={{
                             textShadow: "3px 3px 0 #b0b0b070", // light gray shadow at bottom-right
                           }}
@@ -148,7 +154,7 @@ const Navbar = () => {
                   // Empty panel placeholder
                   <div
                     key={idx}
-                    className="w-full h-full flex items-center justify-center bg-center bg-no-repeat"
+                    className="w-full h-full hidden sm:flex items-center justify-center bg-center bg-no-repeat"
                     style={{
                       backgroundImage: `url(${panel})`,
                       backgroundSize: "contain",
@@ -163,6 +169,7 @@ const Navbar = () => {
             {/* Exit button overlaying background3 */}
             <button
               onClick={closeMenu}
+              aria-label="Close menu"
               className="absolute transition duration-200 ease-in-out hover:brightness-110 hover:scale-110"
               style={{
                 right: "16px",

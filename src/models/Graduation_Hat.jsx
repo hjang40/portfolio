@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useGLTF } from "@react-three/drei";
 
 import graduation_hat from "../assets/3d/graduation_hat.glb";

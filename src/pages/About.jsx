@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useNavigate } from "react-router-dom";
-import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import Pokeball1 from "../models/Pokeball1";
 import BrainComp from "../models/Brain_Comp";
 import GraduationHat from "../models/Graduation_Hat";
 import Hobbies from "../models/Hobbies";
 import Compass from "../models/Compass";
-import textBg from "../assets/images/text.png";
+
+// Generated once so the stars don't jump on every re-render
+const STARS = Array.from({ length: 100 }, () => ({
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  animationDelay: `${Math.random() * 3}s`,
+  animationDuration: `${2 + Math.random() * 2}s`,
+}));
 
 // Pokemon-style UI Frame
 const PokemonFrame = ({ children, variant = "blue", className = "" }) => {
@@ -24,9 +30,9 @@ const PokemonFrame = ({ children, variant = "blue", className = "" }) => {
     <div className={`relative ${className}`}>
       {/* Main frame */}
       <div
-        className={`bg-gradient-to-br ${colors[variant]} p-1 rounded-2xl shadow-2xl border-4 border-white/20`}
+        className={`bg-linear-to-br ${colors[variant]} p-1 rounded-2xl shadow-2xl border-4 border-white/20`}
       >
-        <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 border-2 border-gray-700/50">
+        <div className="bg-gray-900/80 backdrop-blur-xs rounded-xl p-6 border-2 border-gray-700/50">
           {children}
         </div>
       </div>
@@ -110,7 +116,7 @@ const PokemonSection = ({ section, index, isActive }) => {
         {/* Pokemon-style header */}
         <PokemonFrame variant={variants[index]} className="inline-block">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+            <div className="w-12 h-12 bg-linear-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
               <span className="text-white font-bold text-lg">{index + 1}</span>
             </div>
             <div>
@@ -130,10 +136,9 @@ const PokemonSection = ({ section, index, isActive }) => {
             {section.title.split(" ").map((word, i) => (
               <span
                 key={i}
-                className={`inline-block mr-4 transition-all duration-700 delay-${
-                  i * 150
-                } drop-shadow-lg`}
+                className="inline-block mr-4 transition-all duration-700 drop-shadow-lg"
                 style={{
+                  transitionDelay: `${i * 150}ms`,
                   color: section.color,
                   transform: isActive
                     ? "translateY(0) scale(1)"
@@ -147,7 +152,7 @@ const PokemonSection = ({ section, index, isActive }) => {
             ))}
           </h1>
 
-          <div className="h-1 w-32 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-full"></div>
+          <div className="h-1 w-32 bg-linear-to-r from-yellow-400 via-orange-500 to-red-500 rounded-full"></div>
         </div>
 
         {/* Pokemon-style text box */}
@@ -172,7 +177,7 @@ const PokemonSection = ({ section, index, isActive }) => {
               {section.skills.map((skill, i) => (
                 <div
                   key={i}
-                  className="bg-gradient-to-r from-gray-800 to-gray-700 px-4 py-3 rounded-xl border-2 border-gray-600 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105 cursor-pointer"
+                  className="bg-linear-to-r from-gray-800 to-gray-700 px-4 py-3 rounded-xl border-2 border-gray-600 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105 cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
@@ -240,7 +245,7 @@ const PokemonHUD = ({ currentSection, totalSections, onSectionChange }) => {
           <div className="space-y-2">
             <div className="h-4 bg-gray-700 rounded-full overflow-hidden border-2 border-gray-600">
               <div
-                className="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full transition-all duration-1000 ease-out relative"
+                className="h-full bg-linear-to-r from-green-400 via-yellow-400 to-red-400 rounded-full transition-all duration-1000 ease-out relative"
                 style={{ width: `${progress}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
@@ -297,6 +302,7 @@ const PokemonMenu = () => {
 
 // Main About Component
 const About = () => {
+  const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
 
   const sections = [
@@ -440,16 +446,11 @@ const About = () => {
     >
       {/* Animated background stars */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(100)].map((_, i) => (
+        {STARS.map((style, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
+            style={style}
           />
         ))}
       </div>
@@ -496,14 +497,14 @@ const About = () => {
             <div className="flex gap-6 items-center">
               <span className="text-yellow-300 font-bold">THE END</span>
               <button
-                onClick={() => (window.location.href = "/projects")}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 border-2 border-blue-400"
+                onClick={() => navigate("/projects")}
+                className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 border-2 border-blue-400"
               >
                 🚀 VIEW PROJECTS
               </button>
               <button
-                onClick={() => (window.location.href = "/contact")}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 hover:scale-110 border-2 border-green-400"
+                onClick={() => navigate("/contact")}
+                className="px-6 py-3 bg-linear-to-r from-green-600 to-teal-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 hover:scale-110 border-2 border-green-400"
               >
                 📞 CONNECT
               </button>

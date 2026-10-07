@@ -1,20 +1,43 @@
 import React, {
   useRef,
-  useEffect,
+  useMemo,
   forwardRef,
   useImperativeHandle,
-  useState,
 } from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { a, useSpring } from "@react-spring/three";
+import * as THREE from "three";
 
 import pokeball from "../assets/3d/pokeball1.glb";
 
-const Pokeball1 = forwardRef((props, ref) => {
+// Draco decoder served from public/draco/ instead of Google's CDN
+const DRACO_PATH = `${import.meta.env.BASE_URL}draco/`;
+
+// 3 flat light bands (shadow / mid / lit) for the cel-shaded look
+const TOON_GRADIENT = new THREE.DataTexture(
+  new Uint8Array([90, 170, 255]),
+  3,
+  1,
+  THREE.RedFormat
+);
+TOON_GRADIENT.minFilter = TOON_GRADIENT.magFilter = THREE.NearestFilter;
+TOON_GRADIENT.needsUpdate = true;
+
+const Pokeball1 = forwardRef(({ toon = false, ...props }, ref) => {
   const group = useRef();
-  const { nodes, materials, animations } = useGLTF(pokeball);
+  const { nodes, materials, animations } = useGLTF(pokeball, DRACO_PATH);
   const { actions } = useAnimations(animations, group);
-  const [isAnimating, setIsAnimating] = useState(false);
+
+  const material = useMemo(() => {
+    const base = materials["08_-_Default"];
+    if (!toon) return base;
+    return new THREE.MeshToonMaterial({
+      map: base.map,
+      emissive: base.emissive,
+      emissiveMap: base.emissiveMap,
+      gradientMap: TOON_GRADIENT,
+    });
+  }, [materials, toon]);
 
   
 
@@ -22,32 +45,18 @@ const Pokeball1 = forwardRef((props, ref) => {
   const { rotation } = useSpring({
     rotation: [0, 0, 0], // Adjust the fixed rotation angle to your preference
     config: { duration: 1000 },
-    onRest: () => setIsAnimating(false),
   });
-
-  // Debug: Log available animations
-  useEffect(() => {
-    console.log("Available animations:", Object.keys(actions));
-  }, [actions]);
 
   // Expose animation trigger method to parent
   useImperativeHandle(ref, () => ({
     triggerAnimation: () => {
-      console.log("Triggering animation...");
-      const animationNames = Object.keys(actions);
-      if (animationNames.length > 0) {
-        console.log("Playing GLB animation:", animationNames[0]);
-        Object.values(actions).forEach((action) => {
-          action.stop();
-          action.reset();
-          action.setLoop(2201, 1); // THREE.LoopOnce
-          action.clampWhenFinished = true;
-          action.play();
-        });
-      } else {
-        console.log("No GLB animations found, using custom spring animation");
-        setIsAnimating(true);
-      }
+      Object.values(actions).forEach((action) => {
+        action.stop();
+        action.reset();
+        action.setLoop(2201, 1); // THREE.LoopOnce
+        action.clampWhenFinished = true;
+        action.play();
+      });
     },
   }));
 
@@ -103,14 +112,14 @@ const Pokeball1 = forwardRef((props, ref) => {
               castShadow
               receiveShadow
               geometry={nodes["BlackLower_Lowpoly_08_-_Default_0"].geometry}
-              material={materials["08_-_Default"]}
+              material={material}
             />
             <mesh
               name="Button_Lowpoly_08_-_Default_0"
               castShadow
               receiveShadow
               geometry={nodes["Button_Lowpoly_08_-_Default_0"].geometry}
-              material={materials["08_-_Default"]}
+              material={material}
             />
           </group>
         </group>

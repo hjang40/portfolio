@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability -- R3F: the camera is a mutable three.js object, mutating it is the intended API */
 import { useRef, useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -24,9 +25,6 @@ const CameraIntro = ({
     
     // Force a render update
     camera.updateMatrixWorld();
-    
-    // Debug log to verify starting position
-    console.log('Camera starting at:', camera.position.toArray());
 
     const startTime = Date.now();
     

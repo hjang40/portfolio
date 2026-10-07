@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import emailjs from "@emailjs/browser";
 
+// Generated once so the stars don't jump on every re-render
+const STARS = Array.from({ length: 150 }, () => ({
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  animationDelay: `${Math.random() * 3}s`,
+  animationDuration: `${2 + Math.random() * 2}s`,
+}));
+
 // Pokemon-style UI Frame (matching About page)
 const PokemonFrame = ({ children, variant = "blue", className = "" }) => {
   const colors = {
@@ -17,9 +25,9 @@ const PokemonFrame = ({ children, variant = "blue", className = "" }) => {
     <div className={`relative ${className}`}>
       {/* Main frame */}
       <div
-        className={`bg-gradient-to-br ${colors[variant]} p-1 rounded-2xl shadow-2xl border-4 border-white/20`}
+        className={`bg-linear-to-br ${colors[variant]} p-1 rounded-2xl shadow-2xl border-4 border-white/20`}
       >
-        <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 border-2 border-gray-700/50">
+        <div className="bg-gray-900/80 backdrop-blur-xs rounded-xl p-6 border-2 border-gray-700/50">
           {children}
         </div>
       </div>
@@ -56,14 +64,13 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      const result = await emailjs.send(
+      await emailjs.send(
         "service_3pjafyh",
         "template_8717rqo",
         formData,
         "YUu5oiMyx834ATfmr"
       );
 
-      console.log("Email sent:", result.text);
       setSubmitStatus("success");
       setFormData({ name: "", email: "", message: "" });
     } catch (error) {
@@ -78,27 +85,24 @@ const Contact = () => {
   const contactMethods = [
     {
       type: "Email",
-      value: "hyun@gmail.com",
+      value: "hjang40@gmail.com",
+      href: "mailto:hjang40@gmail.com",
       icon: "📧",
-      color: "blue",
+      hoverBorder: "hover:border-blue-400",
     },
     {
       type: "LinkedIn",
       value: "www.linkedin.com/in/hyun-jang",
+      href: "https://www.linkedin.com/in/hyun-jang",
       icon: "💼",
-      color: "purple",
+      hoverBorder: "hover:border-purple-400",
     },
     {
       type: "GitHub",
       value: "github.com/hjang40",
+      href: "https://github.com/hjang40",
       icon: "💻",
-      color: "green",
-    },
-    {
-      type: "Phone",
-      value: "(301) 377 - 2321",
-      icon: "📱",
-      color: "orange",
+      hoverBorder: "hover:border-green-400",
     },
   ];
 
@@ -112,16 +116,11 @@ const Contact = () => {
     >
       {/* Animated background stars */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(150)].map((_, i) => (
+        {STARS.map((style, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
+            style={style}
           />
         ))}
       </div>
@@ -145,7 +144,7 @@ const Contact = () => {
           <div className="text-center mb-12">
             <PokemonFrame variant="blue" className="inline-block mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                <div className="w-16 h-16 bg-linear-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                   <span className="text-white font-bold text-2xl">📞</span>
                 </div>
                 <div>
@@ -157,10 +156,10 @@ const Contact = () => {
               </div>
             </PokemonFrame>
 
-            <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 drop-shadow-lg">
+            <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-linear-to-r from-blue-400 via-purple-400 to-cyan-400 drop-shadow-lg">
               LET'S CONNECT
             </h1>
-            <div className="h-1 w-64 bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 rounded-full mx-auto mt-4"></div>
+            <div className="h-1 w-64 bg-linear-to-r from-blue-400 via-purple-500 to-cyan-400 rounded-full mx-auto mt-4"></div>
           </div>
 
           {/* Main Content Grid */}
@@ -177,13 +176,16 @@ const Contact = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {contactMethods.map((method, index) => (
-                      <div
-                        key={index}
-                        className={`bg-gradient-to-r from-gray-800 to-gray-700 p-4 rounded-xl border-2 border-gray-600 hover:border-${method.color}-400 transition-all duration-300 transform hover:scale-105 cursor-pointer`}
+                    {contactMethods.map((method) => (
+                      <a
+                        key={method.type}
+                        href={method.href}
+                        target={method.href.startsWith("http") ? "_blank" : undefined}
+                        rel="noopener noreferrer"
+                        className={`block bg-linear-to-r from-gray-800 to-gray-700 p-4 rounded-xl border-2 border-gray-600 ${method.hoverBorder} transition-all duration-300 transform hover:scale-105 cursor-pointer`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center border-2 border-gray-600">
+                          <div className="w-12 h-12 bg-linear-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center border-2 border-gray-600">
                             <span className="text-2xl">{method.icon}</span>
                           </div>
                           <div className="flex-1">
@@ -196,7 +198,7 @@ const Contact = () => {
                           </div>
                           <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                         </div>
-                      </div>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -253,7 +255,7 @@ const Contact = () => {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        className="w-full p-3 bg-gray-800 border-2 border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-none transition-all duration-300"
+                        className="w-full p-3 bg-gray-800 border-2 border-gray-600 rounded-lg text-white focus:border-purple-400 focus:outline-hidden transition-all duration-300"
                         placeholder="Enter your name..."
                       />
                     </div>
@@ -268,7 +270,7 @@ const Contact = () => {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full p-3 bg-gray-800 border-2 border-gray-600 rounded-lg text-white  focus:border-purple-400 focus:outline-none transition-all duration-300"
+                        className="w-full p-3 bg-gray-800 border-2 border-gray-600 rounded-lg text-white  focus:border-purple-400 focus:outline-hidden transition-all duration-300"
                         placeholder="example@email.com"
                       />
                     </div>
@@ -283,7 +285,7 @@ const Contact = () => {
                         onChange={handleInputChange}
                         required
                         rows={6}
-                        className="w-full p-3 bg-gray-800 border-2 border-gray-600 rounded-lg text-white  resize-none focus:border-purple-400 focus:outline-none transition-all duration-300"
+                        className="w-full p-3 bg-gray-800 border-2 border-gray-600 rounded-lg text-white  resize-none focus:border-purple-400 focus:outline-hidden transition-all duration-300"
                         placeholder="Write your message here..."
                       />
                     </div>
@@ -294,7 +296,7 @@ const Contact = () => {
                       className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 transform ${
                         isSubmitting
                           ? "bg-gray-600 cursor-not-allowed"
-                          : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 hover:scale-105 shadow-lg hover:shadow-purple-500/50"
+                          : "bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 hover:scale-105 shadow-lg hover:shadow-purple-500/50"
                       } border-2 border-purple-400 text-white`}
                     >
                       {isSubmitting ? (

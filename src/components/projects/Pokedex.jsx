@@ -63,14 +63,14 @@ const Pokedex = ({
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-12 h-12 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
+                      className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-16 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-12 h-12 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
                       aria-label="Previous image"
                     >
                       ◀
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-12 h-12 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
+                      className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-16 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-12 h-12 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
                       aria-label="Next image"
                     >
                       ▶
@@ -94,11 +94,11 @@ const Pokedex = ({
                   aria-label="Click to enlarge media"
                 >
                   {isPdf(selected.images[imgIndex]) ? (
-                    <div className="w-40 h-40 bg-white rounded shadow-lg border">
+                    <div className="w-40 h-40 bg-white rounded-sm shadow-lg border">
                       <object
                         data={selected.images[imgIndex]}
                         type="application/pdf"
-                        className="w-full h-full rounded pointer-events-none"
+                        className="w-full h-full rounded-sm pointer-events-none"
                       >
                         <div className="w-full h-full flex flex-col items-center justify-center">
                           <FaFilePdf size={48} className="text-red-600 mb-2" />
@@ -109,10 +109,10 @@ const Pokedex = ({
                       </object>
                     </div>
                   ) : isVideo(selected.images[imgIndex]) ? (
-                    <div className="w-40 h-40 bg-black rounded shadow-lg border relative overflow-hidden">
+                    <div className="w-40 h-40 bg-black rounded-sm shadow-lg border relative overflow-hidden">
                       <video
                         src={selected.images[imgIndex]}
-                        className="w-full h-full object-cover rounded pointer-events-none"
+                        className="w-full h-full object-cover rounded-sm pointer-events-none"
                         muted
                         playsInline
                       >
@@ -132,7 +132,7 @@ const Pokedex = ({
                     <img
                       src={selected.images[imgIndex]}
                       alt={`${selected.name} ${imgIndex + 1}`}
-                      className="w-40 h-40 rounded shadow-lg object-cover select-none"
+                      className="w-40 h-40 rounded-sm shadow-lg object-cover select-none"
                       draggable={false}
                     />
                   )}
@@ -164,7 +164,7 @@ const Pokedex = ({
             {/* Right Side: Details - Fixed with proper height constraints */}
             <div className="w-3/5 flex flex-col pl-6 pt-8 h-full">
               <div
-                className="mb-4 rounded overflow-hidden relative flex-shrink-0"
+                className="mb-4 rounded-sm overflow-hidden relative shrink-0"
                 style={{
                   height: "60px",
                   backgroundImage: `url(${pokedexTitle})`,
@@ -179,7 +179,7 @@ const Pokedex = ({
                 </div>
               </div>
 
-              <div className="mb-4 grid grid-cols-2 gap-0 border-4 border-gray-600 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+              <div className="mb-4 grid grid-cols-2 gap-0 border-4 border-gray-600 rounded-lg overflow-hidden shadow-lg shrink-0">
                 <div className="bg-gray-300">
                   <div className="p-3 border-b border-gray-500">
                     <span className="text-sm font-bold text-gray-800">
@@ -221,7 +221,7 @@ const Pokedex = ({
                       {selected.skills.slice(0, 1).map((skill, idx) => (
                         <span
                           key={idx}
-                          className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs border border-blue-300"
+                          className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-sm text-xs border border-blue-300"
                         >
                           {skill}
                         </span>
@@ -229,7 +229,7 @@ const Pokedex = ({
                       {selected.skills.length > 2 && (
                         <button
                           onClick={openSkillsModal}
-                          className="bg-blue-100 text-black px-2 py-0.5 rounded text-xs border border-gray-800 ml-1"
+                          className="bg-blue-100 text-black px-2 py-0.5 rounded-sm text-xs border border-gray-800 ml-1"
                           aria-label={`Show ${
                             selected.skills.length - 1
                           } more skills`}
@@ -256,8 +256,8 @@ const Pokedex = ({
               </div>
 
               {/* Description section with controlled height and scrolling */}
-              <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-lg min-h-0 flex flex-col">
-                <div className="p-6 pb-0 flex-shrink-0">
+              <div className="flex-1 bg-white/90 backdrop-blur-xs rounded-lg min-h-0 flex flex-col">
+                <div className="p-6 pb-0 shrink-0">
                   <h3 className="text-lg font-bold text-gray-800 mb-2">
                     {selected.name}
                   </h3>
@@ -272,12 +272,12 @@ const Pokedex = ({
                 </div>
 
                 {selected.link && (
-                  <div className="p-6 pt-4 flex-shrink-0 border-t border-gray-200/50">
+                  <div className="p-6 pt-4 shrink-0 border-t border-gray-200/50">
                     <a
                       href={selected.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm transition-colors border-2 border-red-700 shadow"
+                      className="inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm font-bold text-sm transition-colors border-2 border-red-700 shadow-sm"
                     >
                       VIEW PROJECT →
                     </a>
@@ -309,7 +309,7 @@ const Pokedex = ({
                   {selected.skills.map((skill, idx) => (
                     <div
                       key={idx}
-                      className="p-2 border rounded bg-gray-100 flex items-center"
+                      className="p-2 border rounded-sm bg-gray-100 flex items-center"
                     >
                       <span className="text-sm text-gray-800">{skill}</span>
                     </div>
@@ -323,7 +323,7 @@ const Pokedex = ({
 
       {/* === Image/PDF/Video Zoom Modal === */}
       {showImageZoom && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-[100] p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-100 p-4">
           <div className="relative max-w-full max-h-full">
             <button
               onClick={closeImageZoom}
@@ -337,14 +337,14 @@ const Pokedex = ({
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-14 h-14 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-14 h-14 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
                   aria-label="Previous"
                 >
                   ◀
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-14 h-14 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg w-14 h-14 flex items-center justify-center font-bold transition-all duration-200 shadow-lg border-2 border-blue-300 hover:scale-105 active:scale-95 z-10"
                 >
                   ▶
                 </button>

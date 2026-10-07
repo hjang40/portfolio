@@ -1,11 +1,11 @@
 import React from "react";
 import { MAX_SLOTS } from "./projectData";
 
-const RightSidebar = ({ categories, selectedCategory, setSelectedCategory, filteredProjects, categoryCounts }) => {
+const RightSidebar = ({ selectedCategory, setSelectedCategory, filteredProjects, categoryCounts }) => {
   return (
     <div className="w-80 pl-6 space-y-6">
       {/* Project Categories */}
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border-2 border-white/20">
+      <div className="bg-white/10 backdrop-blur-xs rounded-xl p-6 border-2 border-white/20">
         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
           📂 Categories
         </h3>
@@ -22,7 +22,7 @@ const RightSidebar = ({ categories, selectedCategory, setSelectedCategory, filte
               >
                 {item.category}
               </button>
-              <span className="bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold">
+              <span className="bg-orange-600 text-white px-2 py-1 rounded-sm text-xs font-bold">
                 {item.count}
               </span>
             </div>
@@ -31,7 +31,7 @@ const RightSidebar = ({ categories, selectedCategory, setSelectedCategory, filte
       </div>
 
       {/* Storage Info */}
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border-2 border-white/20">
+      <div className="bg-white/10 backdrop-blur-xs rounded-xl p-6 border-2 border-white/20">
         <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
           💾 Storage Info
         </h3>
@@ -56,19 +56,6 @@ const RightSidebar = ({ categories, selectedCategory, setSelectedCategory, filte
               {MAX_SLOTS - filteredProjects.length} slots
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* Tips */}
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border-2 border-white/20">
-        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          💡 Tips
-        </h3>
-        <div className="space-y-2 text-sm text-gray-200">
-          <p>• Click on projects to view details</p>
-          <p>• Use box navigation to see more</p>
-          <p>• Projects auto-save progress</p>
-          <p>• Filter by category or status</p>
         </div>
       </div>
     </div>

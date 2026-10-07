@@ -69,7 +69,6 @@ export default function Projects() {
       />
       
       <RightSidebar
-        categories={categories}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         filteredProjects={filteredProjects}

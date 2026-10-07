@@ -51,8 +51,8 @@ export const getProjectStats = (projects) => {
       color: "text-green-400",
     },
     {
-      label: "In Progress",
-      value: projects.filter((p) => p.status === "In Progress").length,
+      label: "Ongoing",
+      value: projects.filter((p) => p.status === "Ongoing").length,
       color: "text-yellow-400",
     },
     {
